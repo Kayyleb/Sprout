@@ -1,2 +1,6 @@
 plaid-python
 python-dotenv
+fastapi
+uvicorn
+plaid-python
+python-dotenv
