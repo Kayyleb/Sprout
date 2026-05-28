@@ -32,3 +32,9 @@ def get_transactions(access_token: str, days: int = 30):
     ]
     # returns the data that plaid sends back. For now just return it to the json, but when we have sqlite setup will move there
     return {"transactions": txns}
+
+    # Recieve parameters from the request
+    # build a plaid request object
+    # call plaid
+    # clean up the response
+    # return it to json / database
