@@ -5,7 +5,7 @@ import os
 import plaid
 from plaid.api import plaid_api
 from dotenv import load_dotenv
-from pathlib import path
+from pathlib import Path
 
 load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env")
 
