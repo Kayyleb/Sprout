@@ -27,7 +27,8 @@ def exchange_token(body: dict):
 
     return {"access_token": resp.access_token} # will change this to save to database, for right now just going to return it 
 
-@router.get("/balances") # grab's account balances from the users
+# grabs/requests account balances from the users
+@router.get("/balances") 
 def get_balances(access_token: str):
     req = AccountsBalanceGetRequest(access_token=access_token)
     resp = client.accounts_balance_get(req)
