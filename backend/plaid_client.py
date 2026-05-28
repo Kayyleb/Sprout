@@ -19,3 +19,6 @@ configuration = plaid.Configuration(
 )
 api_client = plaid.ApiClient(configuration)
 client = plaid_api.PlaidApi(api_client)
+
+#notes:
+#seperating the files make sure that the setup code does not get repeated at all everytime the app is opened or anything
