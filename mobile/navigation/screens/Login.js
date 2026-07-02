@@ -24,9 +24,11 @@ const handleLogin = () => {
 
 return(
     <View style={ styles.container }>
-        <View style={{alignContent: 'center'}}>
-      <Image source={LoginImage} style={{ height: 300, width: 300 }} />
-      </View>
+        <View style={styles.logoContainer}>
+        <Image source={LoginImage} style={{ height: 300, width: 300 }} />
+        <Text style={styles.logoText}> SPROUT</Text>
+        </View>
+
       <TextInput style={styles.inputBar} placeholder="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
       <TextInput style={styles.inputBar} placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry={true} autoCapitalize='none' />
       <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={loading}>
@@ -61,10 +63,24 @@ const styles = StyleSheet.create({
   loginButton: {
     width: '100%',
     height: 50,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#009e2a',
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },
+
+  logoContainer: {
+  alignItems: 'center',
+  justifyContent: 'center',
+  marginBottom: 30,
+},
+logoText: {
+  position: 'absolute',
+  bottom: 20,                  // tweak this number to slide up/down
+  fontSize: 32,
+  fontWeight: 'bold',
+  color: '#2d7a3a',            // whatever color reads well on your image
+  letterSpacing: 2,
+},
   buttonText: { color: '#fff', fontWeight: '600' },
 });
