@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, Image , TextInput, TouchableOpacity, View, Alert, ActivityIndicator, TextInputComponent } from 'react-native';
+import { StyleSheet, Text, Image , TextInput , TouchableOpacity, View, Alert, ActivityIndicator, TextInputComponent } from 'react-native';
 
 import LoginImage from '../../assets/Sprout.png';
 
-export default function LoginBar() {
+
+export default function Login({navigation}) {
     const [email , setEmail] = useState('');
     const [password , setPassword] = useState('');
     const [loading , setLoading] = useState(false);
@@ -18,7 +19,7 @@ const handleLogin = () => {
     setLoading(true);
     setTimeout(() => {
         setLoading(false);
-        Alert.alert('Success');
+        navigation.replace("Home");
     } , 1500);
 };
 
@@ -38,29 +39,25 @@ return(
   );
 }
 
+// --- STYLING:
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,                    // fill the screen
+  container: { // styling for gthe page, making sure everything is centered
+    flex: 1,                  
     padding: 20,
-    justifyContent: 'center',   // center vertically
-    alignItems: 'center',       // center horizontally
+    justifyContent: 'center',   
+    alignItems: 'center', 
     backgroundColor: '#fff',
   },
-  logo: {
-    height: 200,
-    width: 200,
-    marginBottom: 30,
-    resizeMode: 'contain',      // scale image cleanly inside its box
-  },
-  inputBar: {
-    width: '100%',              // now needed since alignItems:center shrinks children
+  
+  inputBar: { // styling for both input bars
+    width: '100%', 
     height: 50,
     backgroundColor: '#f1f1f1',
     borderRadius: 8,
     paddingHorizontal: 15,
     marginBottom: 15,
   },
-  loginButton: {
+  loginButton: { // for the login button, might change from green tom a different color depening how i am feeling
     width: '100%',
     height: 50,
     backgroundColor: '#009e2a',
@@ -69,17 +66,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  logoContainer: {
+  logoContainer: { // make sure the logo is centered
   alignItems: 'center',
   justifyContent: 'center',
   marginBottom: 30,
 },
 logoText: {
   position: 'absolute',
-  bottom: 20,                  // tweak this number to slide up/down
+  bottom: 20,           
   fontSize: 32,
   fontWeight: 'bold',
-  color: '#2d7a3a',            // whatever color reads well on your image
+  color: '#2d7a3a',    
   letterSpacing: 2,
 },
   buttonText: { color: '#fff', fontWeight: '600' },
