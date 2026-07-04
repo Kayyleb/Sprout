@@ -13,7 +13,7 @@ export default function Home({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Sprout</Text>
+        <SummaryBlock />
         {/* need backend code*/}
       </ScrollView>
     </SafeAreaView>
@@ -22,32 +22,30 @@ export default function Home({ navigation }) {
 
 const SummaryBlock = () => {
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.topBlock} >
-                <Text style={styles.blockText}>Header</Text>
-            </View>
-            <View style={styles.content}>
-                
-            </View>
-        </SafeAreaView>
-    );
-};
+    <View style={styles.topBlock}>
+      <Text style={styles.blockText}>Accounts Summary</Text>
+    </View>
+  );
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
+  content: {
+    paddingBottom: 20,
+  },
   topBlock: {
-    height: 200, // Adjust this value to make the block larger or smaller
+    height: 200,
     backgroundColor: '#6200ee',
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    borderBottomLeftRadius: 20, // Optional: smooth styling
+    borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
-    elevation: 5, // Optional: adds a shadow on Android
-    shadowColor: '#000', // Optional: adds shadow on iOS
+    elevation: 5,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -57,8 +55,9 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
   },
-  content: {
-    flex: 1,
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
     padding: 20,
   },
-}); { fontWeight: "bold" }
+});
