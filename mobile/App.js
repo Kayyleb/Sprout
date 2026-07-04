@@ -18,7 +18,7 @@ export default function App() {
         <Stack.Screen
           name="Home"
           component={Home}
-          options={{ title: "Finance App" }}
+          options={{ title: "SPROUT" }}
         />
       </Stack.Navigator>
     </NavigationContainer>

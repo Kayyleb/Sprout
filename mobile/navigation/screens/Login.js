@@ -8,6 +8,7 @@ export default function Login({navigation}) {
     const [email , setEmail] = useState('');
     const [password , setPassword] = useState('');
     const [loading , setLoading] = useState(false);
+    const [guest] = useState('');
 
 
 const handleLogin = () => {
@@ -30,11 +31,25 @@ return(
         <Text style={styles.logoText}> SPROUT</Text>
         </View>
 
-      <TextInput style={styles.inputBar} placeholder="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
-      <TextInput style={styles.inputBar} placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry={true} autoCapitalize='none' />
-      <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={loading}>
+      <TextInput style={styles.inputBar} 
+        placeholder="Email" 
+        value={email} 
+        onChangeText={setEmail} 
+        keyboardType="email-address" 
+        autoCapitalize="none" />
+
+      <TextInput style={styles.inputBar} 
+        placeholder="Password" 
+        value={password} 
+        onChangeText={setPassword} 
+        secureTextEntry={true} 
+        autoCapitalize='none' />
+
+      <TouchableOpacity style={styles.loginButton} 
+      onPress={handleLogin} disabled={loading}>
         {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Sign In</Text>}
       </TouchableOpacity>
+
     </View>
   );
 }
