@@ -1,0 +1,46 @@
+# File: tests.yml
+# This runs the checks on github every time something is pushed to main or a pull request is opened
+# if a check fails, a red x shows up next to the commit so a broken merge is caught right away
+
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  # runs the mobile tests in mobile/tests (the same thing as "npm test" in the mobile folder)
+  mobile:
+    name: Mobile tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22 # expo sdk 57 needs node 22.13 or newer
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci
+      - run: npm test
+
+  # makes sure the backend installs and starts up, there are no backend tests yet
+  backend:
+    name: Backend check
+    runs-on: ubuntu-latest
+    env:
+      # made up keys, the check only loads the app and never calls plaid
+      PLAID_CLIENT_ID: not-a-real-id
+      PLAID_SECRET: not-a-real-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.9" # same version the project's venv uses
+      - run: pip install -r requirements.txt
+      - run: python -m compileall -q backend plaid-sandbox
+      # loading main.py also creates the database tables, so this catches a bad import or a broken table
+      - run: python -c "from backend.main import app; print(len(app.routes), 'routes loaded')"
