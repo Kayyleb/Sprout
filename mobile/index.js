@@ -1,3 +1,6 @@
+// File: index.js
+// This is the entry point for the mobile app, expo runs this file first and it hands App.js over to the phone
+
 import { registerRootComponent } from 'expo';
 
 import App from './App';

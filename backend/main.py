@@ -5,6 +5,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.routes import accounts, transactions
+from backend.database import engine, Base
+from backend import models # has to be imported so the tables in it are known before they get created
+
+# creates sprout.db and any tables that do not exist yet, tables that are already there are left alone
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 

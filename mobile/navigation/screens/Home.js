@@ -1,3 +1,7 @@
+// File: Home.js
+// This is the home screen, the page the user lands on after logging in
+// right now it links a plaid sandbox account through the backend and shows the total balance
+
 import { useState } from "react";
 import {
   View,

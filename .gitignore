@@ -1,6 +1,8 @@
 # Environment & secrets
 .env
 *.env
+.db
+*.db
 
 # Python
 __pycache__/

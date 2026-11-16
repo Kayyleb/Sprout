@@ -1,4 +1,8 @@
+# File: requirements.txt
+# Every python package the backend needs, install them all with: pip install -r requirements.txt
+
 plaid-python
 python-dotenv
 fastapi
 uvicorn
+sqlalchemy
