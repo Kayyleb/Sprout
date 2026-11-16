@@ -9,6 +9,7 @@ import Button from "../../components/Button";
 import Calendar from "../../components/Calendar";
 import Card from "../../components/Card";
 import Hero from "../../components/Hero";
+import Icon from "../../components/Icon";
 import Input from "../../components/Input";
 import Row from "../../components/Row";
 import SectionTitle from "../../components/SectionTitle";
@@ -107,7 +108,10 @@ export default function Debt() {
         {/* the plan is sample text for now, later the assistant will build it from the real debts */}
         <SectionTitle>Your payoff plan</SectionTitle>
         <Card>
-          <AppText variant="title">✨ Built by the Sprout assistant</AppText>
+          <View style={styles.planTitle}>
+            <Icon name="sparkle" size={18} color={colors.green} />
+            <AppText variant="title">Built by the Sprout assistant</AppText>
+          </View>
           <AppText variant="meta" style={styles.strategy}>{payoffPlan.strategy}</AppText>
 
           {payoffPlan.steps.map((step, index) => (
@@ -161,6 +165,12 @@ const styles = StyleSheet.create({
   content: { // everything under the red header
     padding: 16,
     paddingBottom: 32,
+  },
+
+  planTitle: { // sparkle icon next to the title of the plan
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
 
   strategy: { // the paragraph explaining the plan

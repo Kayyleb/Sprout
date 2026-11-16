@@ -4,6 +4,7 @@
 import { View, TouchableOpacity, StyleSheet } from "react-native";
 
 import AppText from "./AppText";
+import Icon from "./Icon";
 import { useSettings } from "../context/SettingsContext";
 import { spacing } from "../theme";
 
@@ -11,10 +12,11 @@ import { spacing } from "../theme";
 // meta       - optional small grey text under the name
 // value      - optional text on the right, valueColor changes its color
 // dot        - optional color for a little dot in front of the name (bills use this)
+// icon       - optional name of an icon to show in front of the name
 // right      - optional, anything to show on the right instead of value (a switch, a "Change" link...)
 // first      - true for the first row in a card so it does not draw the line above it
 // onPress    - optional, makes the whole row tappable
-export default function Row({ name, meta, value, valueColor, dot, right, first, onPress }) {
+export default function Row({ name, meta, value, valueColor, dot, icon, right, first, onPress }) {
   const { colors } = useSettings();
 
   // a row is only a button when it has something to do
@@ -28,6 +30,7 @@ export default function Row({ name, meta, value, valueColor, dot, right, first, 
       <View style={styles.left}>
         <View style={styles.nameLine}>
           {dot ? <View style={[styles.dot, { backgroundColor: dot }]} /> : null}
+          {icon ? <Icon name={icon} size={16} style={styles.icon} /> : null}
           <AppText variant="name">{name}</AppText>
         </View>
         {meta ? <AppText variant="meta">{meta}</AppText> : null}
@@ -70,6 +73,10 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
+    marginRight: 6,
+  },
+
+  icon: {
     marginRight: 6,
   },
 });

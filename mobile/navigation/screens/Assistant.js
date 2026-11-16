@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import { View, ScrollView, TextInput, TouchableOpacity, Text, Keyboard, Platform, StyleSheet } from "react-native";
 
 import AppText from "../../components/AppText";
+import Icon from "../../components/Icon";
 import { TAB_BAR_HEIGHT } from "../../components/TabBar";
 import { useSettings } from "../../context/SettingsContext";
 import { shadow } from "../../theme";
@@ -105,9 +106,12 @@ export default function Assistant() {
           ))}
         </View>
 
-        <AppText variant="meta" style={styles.privacy}>
-          🔒 The assistant only sees your Sprout summaries, never your bank login or account numbers.
-        </AppText>
+        <View style={styles.privacyLine}>
+          <Icon name="lock" size={14} color={colors.muted} />
+          <AppText variant="meta" style={styles.privacy}>
+            The assistant only sees your Sprout summaries, never your bank login or account numbers.
+          </AppText>
+        </View>
       </ScrollView>
 
       {/* the text box and send button along the bottom */}
@@ -191,8 +195,15 @@ const styles = StyleSheet.create({
     marginTop: 0,
   },
 
+  privacyLine: { // small lock next to the privacy note
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 6,
+    paddingHorizontal: 8,
+  },
+
   privacy: {
-    textAlign: "center",
+    flexShrink: 1,
     marginTop: 0,
   },
 

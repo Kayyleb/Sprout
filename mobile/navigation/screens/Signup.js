@@ -172,7 +172,8 @@ export default function Signup({ navigation }) {
             <View style={[styles.note, { backgroundColor: colors.bg }]}>
               <Row
                 first
-                name="🔒 Sprout never sees your bank password"
+                icon="lock"
+                name="Sprout never sees your bank password"
                 meta="You log in to your bank inside Plaid"
               />
             </View>

@@ -1,15 +1,16 @@
 // File: TabBar.js
 // This is the bar at the bottom of the app with the Home, Assistant and Settings tabs
 
-import { View, TouchableOpacity, Text, Platform, StyleSheet } from "react-native";
+import { View, TouchableOpacity, Platform, StyleSheet } from "react-native";
 
 import AppText from "./AppText";
+import Icon from "./Icon";
 import { useSettings } from "../context/SettingsContext";
 
 const TABS = [
-  { id: "home", icon: "🏠", label: "Home" },
-  { id: "assistant", icon: "💬", label: "Assistant" },
-  { id: "settings", icon: "⚙️", label: "Settings" },
+  { id: "home", icon: "home", label: "Home" },
+  { id: "assistant", icon: "chat", label: "Assistant" },
+  { id: "settings", icon: "settings", label: "Settings" },
 ];
 
 // extra room under the tabs so they do not sit on top of the home bar at the bottom of the phone
@@ -34,8 +35,8 @@ export default function TabBar({ active, onChange }) {
             onPress={() => onChange(tab.id)}
             activeOpacity={0.7}
           >
-            {/* the icons that are not picked are faded out a little */}
-            <Text style={[styles.icon, { opacity: isActive ? 1 : 0.55 }]}>{tab.icon}</Text>
+            {/* the tab that is picked is green, the other two are grey */}
+            <Icon name={tab.icon} size={24} color={isActive ? colors.green : colors.muted} />
             <AppText
               variant="label"
               style={styles.label}
@@ -63,10 +64,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-  },
-
-  icon: {
-    fontSize: 20,
   },
 
   label: { // the label style is uppercase by default, the tabs look better without it

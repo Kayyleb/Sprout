@@ -1,10 +1,11 @@
 // File: Home.js
 // This is the home screen, the page the user lands on after logging in
 
-import { View, Text, ScrollView, StyleSheet } from "react-native";
+import { View, ScrollView, StyleSheet } from "react-native";
 
 import AppText from "../../components/AppText";
 import Card from "../../components/Card";
+import Icon from "../../components/Icon";
 import SectionTitle from "../../components/SectionTitle";
 import { useSettings } from "../../context/SettingsContext";
 import { money, total, dayOf } from "../../utils/format";
@@ -66,7 +67,7 @@ export default function Home({ navigation }) {
 
       {/* the smaller cards underneath, each one opens its own screen */}
       <SummaryCard
-        icon="🌱"
+        icon="savings"
         label="Total Savings"
         amount={show(savings)}
         hint={savingsAccounts.length + investmentAccounts.length + " accounts"}
@@ -74,7 +75,7 @@ export default function Home({ navigation }) {
       />
 
       <SummaryCard
-        icon="📉"
+        icon="debt"
         label="Debt Breakdown"
         amount={show(debt)}
         hint={debts.length + " debts · " + dueHint}
@@ -82,7 +83,7 @@ export default function Home({ navigation }) {
       />
 
       <SummaryCard
-        icon="🗓️"
+        icon="bills"
         label="Bills"
         amount={show(billsTotal)}
         hint={show(billsPaid) + " paid so far this month"}
@@ -101,7 +102,7 @@ function SummaryCard({ icon, label, amount, hint, progress, onPress }) {
   return (
     <Card style={styles.summaryCard} onPress={onPress}>
       <View style={[styles.iconBox, { backgroundColor: colors.greenSoft }]}>
-        <Text style={styles.icon}>{icon}</Text>
+        <Icon name={icon} size={24} color={colors.green} />
       </View>
 
       <View style={styles.summaryText}>
@@ -149,10 +150,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-  },
-
-  icon: {
-    fontSize: 20,
   },
 
   summaryText: {
