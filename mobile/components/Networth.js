@@ -1,3 +1,7 @@
+// File: Networth.js
+// This is the net worth card, a component that adds up the account balances and shows a breakdown under the total
+// nothing is using it yet
+
 import { View, Text, StyleSheet } from 'react-native';
 
 // formats a number as US currency, used for the big total and for each row

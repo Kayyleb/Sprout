@@ -1,3 +1,7 @@
+// File: Login.js
+// This is the log in screen, it takes the email and password and then moves the user to the home screen
+// it is not connected to the backend yet, so any email and password will work
+
 import React, { useState } from 'react';
 import { StyleSheet, Text, Image, TextInput, TouchableOpacity, View, Alert, ActivityIndicator } from 'react-native';
 
