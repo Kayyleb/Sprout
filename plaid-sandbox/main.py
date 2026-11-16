@@ -1,5 +1,8 @@
+# File: plaid-sandbox/main.py
+# This is the original command line version of the app, used to test the plaid sandbox before the backend existed
+# the backend/ folder is the real version now, this is just kept around for testing plaid calls quickly
+
 import os
-import json
 from dotenv import load_dotenv
 from datetime import date, timedelta
 
@@ -13,7 +16,6 @@ from plaid.model.transactions_get_request_options import TransactionsGetRequestO
 from plaid.model.auth_get_request import AuthGetRequest
 from plaid.model.identity_get_request import IdentityGetRequest
 from plaid.model.products import Products
-from plaid.model.country_code import CountryCode
 
 load_dotenv()
 

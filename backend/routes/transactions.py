@@ -1,4 +1,8 @@
-from fastapi import APIRouter 
+# File: transactions.py
+# This is the transaction router, similar to accounts.py, it is the end point for pulling a user's transactions from plaid
+
+#python imports:
+from fastapi import APIRouter
 from plaid.model.transactions_get_request import TransactionsGetRequest
 from plaid.model.transactions_get_request_options import TransactionsGetRequestOptions
 from datetime import date, timedelta
@@ -6,13 +10,14 @@ from backend.plaid_client import client
 
 router = APIRouter()
 
+# grabs/requests the recent transactions from the users
 @router.get("/transactions")
 def get_transactions(access_token: str, days: int = 30):
     end = date.today()
     start = end - timedelta(days=days) #calc date range
 
     #this builds the plaid request object
-    req = TransactionsGetRequest( 
+    req = TransactionsGetRequest(
         access_token=access_token, # bank acc to pull from
         start_date=start, # start date for range
         end_date=end, # end date for range
@@ -20,8 +25,8 @@ def get_transactions(access_token: str, days: int = 30):
     )
     resp = client.transactions_get(req) # actually calls plaid
 
-    # when plaid returns all the transaction info it will populate onlt these fields
-    # later when the app is built we can take in more information such as merchent infor payment method, etc.
+    # when plaid returns all the transaction info it will populate only these fields
+    # later when the app is built we can take in more information such as merchant info, payment method, etc.
     txns = [
         {
             "date": str(t.date),
@@ -33,8 +38,10 @@ def get_transactions(access_token: str, days: int = 30):
     # returns the data that plaid sends back. For now just return it to the json, but when we have sqlite setup will move there
     return {"transactions": txns}
 
-    # Recieve parameters from the request
-    # build a plaid request object
-    # call plaid
-    # clean up the response
-    # return it to json / database
+# notes:
+# the steps this file follows:
+#   Receive parameters from the request
+#   build a plaid request object
+#   call plaid
+#   clean up the response
+#   return it to json / database
