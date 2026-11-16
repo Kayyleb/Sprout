@@ -30,3 +30,5 @@ env/
 
 # Logs
 *.log
+# Prototype mockups (local only)
+prototype/
