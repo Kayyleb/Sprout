@@ -9,13 +9,14 @@ import {
   SafeAreaView,
 } from "react-native";
 
+// where the backend is running, localhost only works on a simulator on the same computer
 const API = "http://localhost:8000";
 
 // main home screen of the app, after login
-export default function Home({ navigation }) {
-  const [accessToken, setAccessToken] = useState(null); // accessToken is the plaid token recieved after linking account (sandbox for now)
-  const [accounts, setAccounts] = useState([]); // accounts is the list of bank accounts and balances taken in from plaid. 
-  const [transactions, setTransactions] = useState([]); // transactions, reserved for when we i transaction fetching
+export default function Home() {
+  const [accessToken, setAccessToken] = useState(null); // accessToken is the plaid token received after linking account (sandbox for now)
+  const [accounts, setAccounts] = useState([]); // accounts is the list of bank accounts and balances taken in from plaid.
+  const [transactions, setTransactions] = useState([]); // transactions, reserved for when we add transaction fetching
 
   // handler to link plaid sandbox account
   //  create link token -> gets a public token
@@ -26,6 +27,9 @@ export default function Home({ navigation }) {
       const linkResponse = await fetch(API + "/create-link-token", {
         method: "POST",
       });
+      if (!linkResponse.ok) {
+        throw new Error("Could not create a link token.");
+      }
       const linkData = await linkResponse.json();
       const publicToken = linkData.public_token;
 
@@ -37,6 +41,9 @@ export default function Home({ navigation }) {
         },
         body: JSON.stringify({ public_token: publicToken }),
       });
+      if (!exchangeResponse.ok) {
+        throw new Error("Could not exchange the token.");
+      }
       const exchangeData = await exchangeResponse.json();
       const newAccessToken = exchangeData.access_token;
 
@@ -49,16 +56,23 @@ export default function Home({ navigation }) {
     }
   }
 
-  // Handler tofetch balances. Runs when the user taps "Refresh Balances".
+  // Handler to fetch balances. Runs when the user taps "Refresh Balances".
   async function fetchBalances() {
-    const url = API + "/balances?access_token=" + accessToken;
-    const response = await fetch(url);
-    const data = await response.json();
+    try {
+      const url = API + "/balances?access_token=" + encodeURIComponent(accessToken);
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error("Balances could not be loaded.");
+      }
+      const data = await response.json();
 
-    // data.accounts is an array of account objects from Plaid
-    setAccounts(data.accounts);
+      // data.accounts is an array of account objects from Plaid
+      setAccounts(data.accounts);
+    } catch (error) {
+      // if the data could not be loaded, tell the user so they can try again
+      Alert.alert("Error", String(error));
+    }
   }
-
 
   return (
     <SafeAreaView style={styles.container}>
@@ -78,8 +92,7 @@ export default function Home({ navigation }) {
           {/* Only show "Refresh Balances" AFTER we have an access token.
               Before linking, this button would fail because there's no token. */}
           {accessToken !== null && (
-            <View>
-              <View style={{ height: 10 }} />
+            <View style={styles.buttonSpacing}>
               <Button
                 title="Refresh Balances"
                 onPress={fetchBalances}
@@ -93,22 +106,23 @@ export default function Home({ navigation }) {
   );
 }
 
+// the first block on the home screen, adds up every account into one total
+// with no linked account it just shows $0.00
 function SummaryBlock(props) {
   const accounts = props.accounts || [];
 
-  // Calculate the total balance 
+  // Calculate the total balance
   // Loop through each account and add its balance to a running total
   let total = 0;
   for (let i = 0; i < accounts.length; i++) {
     const account = accounts[i];
 
+    // use the available balance when plaid gives one, otherwise fall back to the current balance
     let balance = 0;
     if (account.available !== null && account.available !== undefined) {
       balance = account.available;
     } else if (account.current !== null && account.current !== undefined) {
       balance = account.current;
-    } else {
-      balance = 0;
     }
 
     total = total + balance;
@@ -130,7 +144,7 @@ function SummaryBlock(props) {
 }
 
 
-// Styling 
+// Styling
 const styles = StyleSheet.create({
   // Fills the whole screen with a light grey background
   container: {
@@ -181,5 +195,10 @@ const styles = StyleSheet.create({
   // Wrapper around the buttons below the header
   buttonArea: {
     padding: 20,
+  },
+
+  // Gap between the two buttons
+  buttonSpacing: {
+    marginTop: 10,
   },
 });
