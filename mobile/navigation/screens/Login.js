@@ -1,120 +1,138 @@
 // File: Login.js
-// This is the log in screen, it takes the email and password and then moves the user to the home screen
-// it is not connected to the backend yet, so any email and password will work
+// This is the log in screen, the first thing the user sees when opening the app
 
-import React, { useState } from 'react';
-import { StyleSheet, Text, Image, TextInput, TouchableOpacity, View, Alert, ActivityIndicator } from 'react-native';
+import { useState } from "react";
+import {
+  StyleSheet,
+  Image,
+  View,
+  ScrollView,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
+} from "react-native";
 
-import LoginImage from '../../assets/Sprout.png';
+import LoginImage from "../../assets/Sprout.png";
+import AppText from "../../components/AppText";
+import Button from "../../components/Button";
+import Input from "../../components/Input";
+import { useSettings } from "../../context/SettingsContext";
+import { login } from "../../api";
 
-// log in screen, the first thing the user sees when opening the app
 export default function Login({ navigation }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false); // true while the sign in is "working", swaps the button text for a spinner
+  const { colors } = useSettings();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false); // true while the sign in is working, swaps the button text for a spinner
 
   // runs when the user taps Sign In
-  // no db integration yet, so for now it only checks that both fields are filled in and then moves to home
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please Fill in all fields.');
+      Alert.alert("Error", "Please fill in all fields.");
       return;
     }
 
-    // fake loading time, this is where the real log in call to the backend will go
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      navigation.replace("Home"); // replace so the back button does not go back to login
-    }, 1500);
+    try {
+      await login(email, password); // in demo mode this always works, see api.js
+      navigation.replace("Main"); // replace so the back button does not go back to login
+    } catch (error) {
+      // the backend sends the reason (wrong email or password), show it to the user
+      Alert.alert("Could not sign in", error.message);
+    }
+    setLoading(false);
+  };
+
+  // no reset flow yet, this is where the reset code email will get sent from
+  const handleForgot = () => {
+    Alert.alert("Forgot password", "A reset code would be emailed here.");
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.logoContainer}>
-        <Image source={LoginImage} style={styles.logoImage} />
-        <Text style={styles.logoText}> SPROUT</Text>
-      </View>
+    // moves everything up when the keyboard opens so the inputs are not covered
+    <KeyboardAvoidingView
+      style={[styles.screen, { backgroundColor: colors.card }]}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <View style={styles.logoContainer}>
+          <Image source={LoginImage} style={styles.logoImage} />
+          <AppText style={styles.logoText} color={colors.greenDark}>SPROUT</AppText>
+        </View>
 
-      <TextInput
-        style={styles.inputBar}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
+        <Input
+          placeholder="Email"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+        />
 
-      <TextInput
-        style={styles.inputBar}
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry={true}
-        autoCapitalize="none"
-      />
+        <Input
+          placeholder="Password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry={true}
+        />
 
-      <TouchableOpacity
-        style={styles.loginButton}
-        onPress={handleLogin}
-        disabled={loading}
-      >
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Sign In</Text>}
-      </TouchableOpacity>
-    </View>
+        <Button title="Sign In" onPress={handleLogin} loading={loading} />
+
+        <TouchableOpacity style={styles.link} onPress={handleForgot}>
+          <AppText style={styles.linkText} color={colors.green}>Forgot password?</AppText>
+        </TouchableOpacity>
+
+        <View style={[styles.link, styles.linkRow]}>
+          <AppText color={colors.muted}>New to Sprout? </AppText>
+          <TouchableOpacity onPress={() => navigation.navigate("Signup")}>
+            <AppText style={styles.linkText} color={colors.green}>Create an account</AppText>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 // --- STYLING:
 const styles = StyleSheet.create({
-  container: { // styling for the page, making sure everything is centered
+  screen: {
     flex: 1,
-    padding: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff',
   },
 
-  inputBar: { // styling for both input bars
-    width: '100%',
-    height: 50,
-    backgroundColor: '#f1f1f1',
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    marginBottom: 15,
-  },
-
-  loginButton: { // for the login button, might change from green to a different color depending how i am feeling
-    width: '100%',
-    height: 50,
-    backgroundColor: '#009e2a',
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
+  container: { // styling for the page, making sure everything is centered
+    flexGrow: 1,
+    padding: 24,
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   logoContainer: { // make sure the logo is centered
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 30,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 24,
   },
 
   logoImage: { // the sprout logo
-    height: 300,
-    width: 300,
+    height: 210,
+    width: 210,
+    resizeMode: "contain",
   },
 
-  logoText: { // app name, sits on top of the bottom of the logo
-    position: 'absolute',
-    bottom: 20,
+  logoText: { // app name, pulled up so it sits on the bottom of the logo
+    marginTop: -18,
     fontSize: 32,
-    fontWeight: 'bold',
-    color: '#2d7a3a',
+    fontWeight: "bold",
     letterSpacing: 2,
   },
 
-  buttonText: { // text inside the login button
-    color: '#fff',
-    fontWeight: '600',
+  link: { // the two lines of links under the button
+    marginTop: 16,
+  },
+
+  linkRow: {
+    flexDirection: "row",
+  },
+
+  linkText: {
+    fontWeight: "600",
   },
 });
