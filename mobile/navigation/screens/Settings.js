@@ -143,6 +143,7 @@ export default function Settings({ navigation }) {
           meta="Masks the amounts on the homepage"
           right={
             <Switch
+              testID="hide-values-switch" // lets the tests find this switch
               value={settings.hideValues}
               onValueChange={settings.setHideValues}
               trackColor={{ true: colors.green, false: colors.line }}

@@ -1,8 +1,7 @@
-// File: sampleData.test.mjs
+// File: sampleData.test.js
 // Checks that the made up numbers in data/sampleData.js agree with each other and with what the screens say
 // if someone edits the sample data and a total stops matching, one of these fails
 
-import test from "node:test";
 import assert from "node:assert/strict";
 
 import { total, inMonth, dayOf } from "../utils/format.js";

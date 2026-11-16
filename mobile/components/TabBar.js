@@ -1,7 +1,8 @@
 // File: TabBar.js
 // This is the bar at the bottom of the app with the Home, Assistant and Settings tabs
 
-import { View, TouchableOpacity, Platform, StyleSheet } from "react-native";
+import { View, TouchableOpacity, StyleSheet } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import AppText from "./AppText";
 import Icon from "./Icon";
@@ -13,19 +14,29 @@ const TABS = [
   { id: "settings", icon: "settings", label: "Settings" },
 ];
 
-// extra room under the tabs so they do not sit on top of the home bar at the bottom of the phone
-// this is a guess that looks right on most phones, it is not measured from the real device
-const BOTTOM_SPACE = Platform.OS === "ios" ? 24 : 12;
+// how tall the row of tabs is, not counting the extra room under it
+const TABS_HEIGHT = 56;
 
-// the assistant screen needs to know how tall this bar is when the keyboard opens
-export const TAB_BAR_HEIGHT = 56 + BOTTOM_SPACE;
+// the full height of the bar on this phone, the tabs plus the room the phone needs at the bottom (the home bar on an iphone)
+// the assistant screen also uses this to know how far to move up when the keyboard opens
+export function useTabBarHeight() {
+  const insets = useSafeAreaInsets();
+  return TABS_HEIGHT + insets.bottom;
+}
 
 // active is the id of the tab that is showing, onChange gets called with the id of the tab that was tapped
 export default function TabBar({ active, onChange }) {
   const { colors } = useSettings();
+  const insets = useSafeAreaInsets();
+  const height = useTabBarHeight();
 
   return (
-    <View style={[styles.bar, { backgroundColor: colors.card, borderTopColor: colors.line }]}>
+    <View
+      style={[
+        styles.bar,
+        { height: height, paddingBottom: insets.bottom, backgroundColor: colors.card, borderTopColor: colors.line },
+      ]}
+    >
       {TABS.map((tab) => {
         const isActive = tab.id === active;
         return (
@@ -55,8 +66,6 @@ export default function TabBar({ active, onChange }) {
 const styles = StyleSheet.create({
   bar: {
     flexDirection: "row",
-    height: TAB_BAR_HEIGHT,
-    paddingBottom: BOTTOM_SPACE,
     borderTopWidth: 1,
   },
 

@@ -1,7 +1,6 @@
-// File: validate.test.mjs
+// File: validate.test.js
 // Tests for the email and password checks in utils/validate.js
 
-import test from "node:test";
 import assert from "node:assert/strict";
 
 import { isValidEmail, passwordRules, isStrongPassword } from "../utils/validate.js";

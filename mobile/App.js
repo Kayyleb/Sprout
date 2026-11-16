@@ -4,6 +4,7 @@
 import { NavigationContainer, DefaultTheme, DarkTheme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { SettingsProvider, useSettings } from "./context/SettingsContext";
 
@@ -19,11 +20,14 @@ import Bills from "./navigation/screens/Bills";
 const Stack = createNativeStackNavigator();
 
 // the settings provider has to be on the outside so the navigation can read dark mode from it
+// the safe area provider is what lets the tab bar ask how much room the bottom of the phone needs
 export default function App() {
   return (
-    <SettingsProvider>
-      <Navigation />
-    </SettingsProvider>
+    <SafeAreaProvider>
+      <SettingsProvider>
+        <Navigation />
+      </SettingsProvider>
+    </SafeAreaProvider>
   );
 }
 

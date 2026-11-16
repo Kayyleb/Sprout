@@ -6,7 +6,7 @@ import { View, ScrollView, TextInput, TouchableOpacity, Text, Keyboard, Platform
 
 import AppText from "../../components/AppText";
 import Icon from "../../components/Icon";
-import { TAB_BAR_HEIGHT } from "../../components/TabBar";
+import { useTabBarHeight } from "../../components/TabBar";
 import { useSettings } from "../../context/SettingsContext";
 import { shadow } from "../../theme";
 import { assistantHello, assistantFallback, assistantQuestions } from "../../data/sampleData";
@@ -20,6 +20,7 @@ export default function Assistant() {
   const [text, setText] = useState(""); // what is typed in the box
   const [keyboardSpace, setKeyboardSpace] = useState(0);
   const scroll = useRef(null);
+  const tabBarHeight = useTabBarHeight();
   const answerTimer = useRef(null); // the wait before the assistant answers, kept so it can be cancelled
 
   // on ios the keyboard covers the bottom of the screen, so the text box gets pushed up by the keyboard height
@@ -28,7 +29,7 @@ export default function Assistant() {
     if (Platform.OS !== "ios") return; // android moves the screen up by itself
 
     const show = Keyboard.addListener("keyboardWillShow", (event) => {
-      setKeyboardSpace(Math.max(0, event.endCoordinates.height - TAB_BAR_HEIGHT));
+      setKeyboardSpace(Math.max(0, event.endCoordinates.height - tabBarHeight));
     });
     const hide = Keyboard.addListener("keyboardWillHide", () => setKeyboardSpace(0));
 
@@ -37,7 +38,7 @@ export default function Assistant() {
       show.remove();
       hide.remove();
     };
-  }, []);
+  }, [tabBarHeight]);
 
   // if the screen goes away while an answer is still on its way, cancel it
   useEffect(() => {

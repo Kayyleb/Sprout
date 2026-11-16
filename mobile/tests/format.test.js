@@ -1,8 +1,7 @@
-// File: format.test.mjs
+// File: format.test.js
 // Tests for the money and date helpers in utils/format.js
 // run every test from the mobile folder with: npm test
 
-import test from "node:test";
 import assert from "node:assert/strict";
 
 import { money, total, formatDate, parseDate, datePlaceholder, dayOf, inMonth, plural, todayIso } from "../utils/format.js";
