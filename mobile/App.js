@@ -6,9 +6,11 @@ import Home from "./navigation/screens/Home";
 
 const Stack = createNativeStackNavigator();
 
+// root of the app, holds the navigation stack that every screen gets added to
 export default function App() {
   return (
     <NavigationContainer>
+      {/* the app always opens on the login screen, there is no guest option */}
       <Stack.Navigator initialRouteName="Login">
         <Stack.Screen
           name="Login"
