@@ -49,7 +49,6 @@ export default function Home({ navigation }) {
     }
   }
 
-
   // Handler tofetch balances. Runs when the user taps "Refresh Balances".
   async function fetchBalances() {
     const url = API + "/balances?access_token=" + accessToken;
@@ -102,7 +101,7 @@ function SummaryBlock(props) {
   let total = 0;
   for (let i = 0; i < accounts.length; i++) {
     const account = accounts[i];
-    
+
     let balance = 0;
     if (account.available !== null && account.available !== undefined) {
       balance = account.available;
