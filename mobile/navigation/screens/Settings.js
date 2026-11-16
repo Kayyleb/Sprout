@@ -11,7 +11,7 @@ import Choices from "../../components/Choices";
 import Row from "../../components/Row";
 import SectionTitle from "../../components/SectionTitle";
 import { useSettings } from "../../context/SettingsContext";
-import { formatDate } from "../../utils/format";
+import { formatDate, todayIso, plural } from "../../utils/format";
 import { linkBankAccount, getBalances } from "../../api";
 import { user, linkedBanks } from "../../data/sampleData";
 
@@ -45,7 +45,8 @@ export default function Settings({ navigation }) {
       {
         text: "Disconnect",
         style: "destructive",
-        onPress: () => setBanks(banks.filter((item) => item !== bank)),
+        // "current" is the list as it is when the button is tapped, not as it was when the alert opened
+        onPress: () => setBanks((current) => current.filter((item) => item !== bank)),
       },
     ]);
   };
@@ -57,8 +58,10 @@ export default function Settings({ navigation }) {
       const accessToken = await linkBankAccount();
       const accounts = await getBalances(accessToken);
 
-      const today = new Date().toISOString().slice(0, 10); // today as YYYY-MM-DD
-      setBanks([...banks, { name: "Plaid Sandbox Bank", accounts: accounts.length, linkedDate: today }]);
+      setBanks((current) => [
+        ...current,
+        { name: "Plaid Sandbox Bank", accounts: accounts.length, linkedDate: todayIso() },
+      ]);
       Alert.alert("Linked", "Sandbox account connected.");
     } catch (error) {
       Alert.alert("Error", error.message);
@@ -94,7 +97,7 @@ export default function Settings({ navigation }) {
             key={index}
             first={index === 0}
             name={bank.name}
-            meta={bank.accounts + " accounts · linked " + formatDate(bank.linkedDate, dateOrder)}
+            meta={plural(bank.accounts, "account") + " · linked " + formatDate(bank.linkedDate, dateOrder)}
             right={
               <TouchableOpacity onPress={() => handleDisconnect(bank)}>
                 <AppText variant="meta" style={styles.link} color={colors.red}>Disconnect</AppText>

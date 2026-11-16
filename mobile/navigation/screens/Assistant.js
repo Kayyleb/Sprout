@@ -20,6 +20,7 @@ export default function Assistant() {
   const [text, setText] = useState(""); // what is typed in the box
   const [keyboardSpace, setKeyboardSpace] = useState(0);
   const scroll = useRef(null);
+  const answerTimer = useRef(null); // the wait before the assistant answers, kept so it can be cancelled
 
   // on ios the keyboard covers the bottom of the screen, so the text box gets pushed up by the keyboard height
   // (minus the tab bar, since that is under the text box and gets covered anyway)
@@ -27,7 +28,7 @@ export default function Assistant() {
     if (Platform.OS !== "ios") return; // android moves the screen up by itself
 
     const show = Keyboard.addListener("keyboardWillShow", (event) => {
-      setKeyboardSpace(event.endCoordinates.height - TAB_BAR_HEIGHT);
+      setKeyboardSpace(Math.max(0, event.endCoordinates.height - TAB_BAR_HEIGHT));
     });
     const hide = Keyboard.addListener("keyboardWillHide", () => setKeyboardSpace(0));
 
@@ -38,6 +39,11 @@ export default function Assistant() {
     };
   }, []);
 
+  // if the screen goes away while an answer is still on its way, cancel it
+  useEffect(() => {
+    return () => clearTimeout(answerTimer.current);
+  }, []);
+
   // adds the question to the chat, then the answer half a second later
   // this is where the real call to the assistant will go
   const ask = (question) => {
@@ -45,7 +51,7 @@ export default function Assistant() {
 
     const match = assistantQuestions.find((item) => item.question === question);
     const answer = match ? match.answer : assistantFallback;
-    setTimeout(() => {
+    answerTimer.current = setTimeout(() => {
       setMessages((current) => [...current, { from: "ai", text: answer }]);
     }, 500);
   };
@@ -60,6 +66,7 @@ export default function Assistant() {
 
   // wipes the chat back to just the hello message
   const handleClear = () => {
+    clearTimeout(answerTimer.current); // so an answer does not show up after the chat was cleared
     setMessages([FIRST_MESSAGE]);
   };
 
@@ -70,7 +77,7 @@ export default function Assistant() {
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         // keep the newest message in view
-        onContentSizeChange={() => scroll.current.scrollToEnd({ animated: true })}
+        onContentSizeChange={() => scroll.current?.scrollToEnd({ animated: true })}
       >
         <TouchableOpacity style={styles.clear} onPress={handleClear}>
           <AppText variant="meta" color={colors.green} style={styles.clearText}>Clear</AppText>

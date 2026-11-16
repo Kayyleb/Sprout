@@ -13,7 +13,7 @@ import Input from "../../components/Input";
 import Row from "../../components/Row";
 import SectionTitle from "../../components/SectionTitle";
 import { useSettings } from "../../context/SettingsContext";
-import { money, total } from "../../utils/format";
+import { money, total, plural } from "../../utils/format";
 import { savingsAccounts, investmentAccounts } from "../../data/sampleData";
 
 // the account types on the add form, the last two are the ones that count as investments
@@ -39,7 +39,7 @@ export default function Savings() {
   // nothing is sent to the backend yet, it only gets added to the lists on this screen
   const handleSave = () => {
     const number = Number(balance);
-    if (!name || balance === "" || isNaN(number)) {
+    if (!name || balance === "" || isNaN(number) || number < 0) {
       Alert.alert("Error", "Enter a name and a balance for the account.");
       return;
     }
@@ -63,7 +63,7 @@ export default function Savings() {
       <Hero
         label="Total Savings"
         amount={money(savingsTotal)}
-        sub={accountCount + " accounts · checking is not counted"}
+        sub={plural(accountCount, "account") + " · checking is not counted"}
       />
 
       <View style={styles.content}>
@@ -103,7 +103,7 @@ export default function Savings() {
                     {account.holdings.map((holding) => (
                       <View key={holding.symbol} style={styles.holding}>
                         <AppText variant="meta" style={styles.holdingText} color={colors.text}>
-                          {holding.symbol} · {holding.shares} shares × {money(holding.price)}
+                          {holding.symbol} · {plural(holding.shares, "share")} × {money(holding.price)}
                         </AppText>
                         <AppText variant="meta" style={styles.holdingValue} color={colors.text}>
                           {money(holding.shares * holding.price)}

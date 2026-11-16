@@ -12,7 +12,7 @@ import Hero from "../../components/Hero";
 import Input from "../../components/Input";
 import Row from "../../components/Row";
 import { useSettings } from "../../context/SettingsContext";
-import { money, total, dayOf, inMonth, parseDate, datePlaceholder } from "../../utils/format";
+import { money, total, dayOf, inMonth, parseDate, datePlaceholder, plural } from "../../utils/format";
 import { currentMonth, deposits, depositTypes, incomeWeeks, bills } from "../../data/sampleData";
 
 // the deposit types as a list for the pills on the add form
@@ -76,7 +76,7 @@ export default function Income() {
       <Hero
         label={"Income in " + currentMonth.name}
         amount={money(income)}
-        sub={monthItems.length + " deposits across " + weeksWithIncome + " weeks"}
+        sub={plural(monthItems.length, "deposit") + " across " + plural(weeksWithIncome, "week")}
       />
 
       <View style={styles.content}>

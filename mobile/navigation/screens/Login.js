@@ -35,7 +35,7 @@ export default function Login({ navigation }) {
 
     setLoading(true);
     try {
-      await login(email, password); // in demo mode this always works, see api.js
+      await login(email.trim(), password); // in demo mode this always works, see api.js
       navigation.replace("Main"); // replace so the back button does not go back to login
     } catch (error) {
       // the backend sends the reason (wrong email or password), show it to the user

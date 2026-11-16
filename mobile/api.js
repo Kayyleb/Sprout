@@ -37,7 +37,8 @@ async function request(path, options, fallbackMessage) {
 
   if (!response.ok) {
     // fastapi puts the reason in "detail", only use it when it is plain text
-    if (data && typeof data.detail === "string") {
+    // a 404 means the backend does not have this end point yet, its detail is just "Not Found" so the fallback reads better
+    if (response.status !== 404 && data && typeof data.detail === "string") {
       throw new Error(data.detail);
     }
     throw new Error(fallbackMessage);

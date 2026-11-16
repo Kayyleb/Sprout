@@ -14,7 +14,7 @@ import Input from "../../components/Input";
 import Row from "../../components/Row";
 import SectionTitle from "../../components/SectionTitle";
 import { useSettings } from "../../context/SettingsContext";
-import { money, total, dayOf, inMonth, formatDate, parseDate, datePlaceholder } from "../../utils/format";
+import { money, total, dayOf, inMonth, formatDate, parseDate, datePlaceholder, plural } from "../../utils/format";
 import { currentMonth, debts, payoffPlan, deposits, bills } from "../../data/sampleData";
 
 export default function Debt() {
@@ -54,8 +54,9 @@ export default function Debt() {
   // runs when the user taps Save on the add debt form
   // nothing is sent to the backend yet, it only gets added to the list on this screen
   const handleSave = () => {
+    const number = Number(balance);
     const isoDate = parseDate(dueDate, dateOrder);
-    if (!name || !Number(balance)) {
+    if (!name || !number || number <= 0) {
       Alert.alert("Error", "Enter a name and a balance for the debt.");
       return;
     }
@@ -66,7 +67,7 @@ export default function Debt() {
 
     const newDebt = {
       name: name,
-      balance: Number(balance),
+      balance: number,
       apr: Number(apr) || 0, // left empty counts as 0
       minimum: Number(minimum) || 0,
       dueDate: isoDate,
@@ -87,7 +88,7 @@ export default function Debt() {
       <Hero
         label="Total Debt"
         amount={money(debtTotal)}
-        sub={items.length + " debts · " + money(minimumTotal) + " in minimum payments"}
+        sub={plural(items.length, "debt") + " · " + money(minimumTotal) + " in minimum payments"}
         color={colors.debt}
       />
 

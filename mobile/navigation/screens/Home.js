@@ -8,7 +8,7 @@ import Card from "../../components/Card";
 import Icon from "../../components/Icon";
 import SectionTitle from "../../components/SectionTitle";
 import { useSettings } from "../../context/SettingsContext";
-import { money, total, dayOf } from "../../utils/format";
+import { money, total, dayOf, plural } from "../../utils/format";
 import {
   currentMonth,
   purchases,
@@ -34,10 +34,14 @@ export default function Home({ navigation }) {
   const daysUntilDue = debts
     .map((item) => dayOf(item.dueDate) - currentMonth.today)
     .filter((days) => days >= 0);
-  const dueHint =
-    daysUntilDue.length > 0
-      ? "next payment due in " + Math.min(...daysUntilDue) + " days"
-      : "no more payments due this month";
+  let dueHint = "no more payments due this month";
+  if (daysUntilDue.length > 0) {
+    const soonest = Math.min(...daysUntilDue);
+    dueHint = soonest === 0 ? "next payment due today" : "next payment due in " + plural(soonest, "day");
+  }
+
+  // how much of the bills are paid, from 0 to 1 (0 when there are no bills so it never divides by zero)
+  const billsProgress = billsTotal > 0 ? billsPaid / billsTotal : 0;
 
   // writes out an amount, or dots when "hide account values" is turned on in settings
   const show = (amount) => (hideValues ? "••••" : money(amount));
@@ -46,22 +50,22 @@ export default function Home({ navigation }) {
     <ScrollView contentContainerStyle={styles.content}>
       <SectionTitle>{currentMonth.name} {currentMonth.year}</SectionTitle>
 
-      {/* the two large summaries at the top */}
+      {/* the two large summaries at the top, the text shrinks to stay on one line when the font size is set to large */}
       <View style={styles.topRow}>
         <Card style={styles.topCard} onPress={() => navigation.navigate("Spending")}>
-          <AppText variant="label">Monthly Spending</AppText>
+          <AppText variant="label" numberOfLines={1} adjustsFontSizeToFit>Monthly Spending</AppText>
           <AppText variant="amount" color={colors.red} numberOfLines={1} adjustsFontSizeToFit>
             {show(spent)}
           </AppText>
-          <AppText variant="meta">{currentMonth.today} days so far ›</AppText>
+          <AppText variant="meta">{plural(currentMonth.today, "day")} so far ›</AppText>
         </Card>
 
         <Card style={styles.topCard} onPress={() => navigation.navigate("Income")}>
-          <AppText variant="label">Monthly Income</AppText>
+          <AppText variant="label" numberOfLines={1} adjustsFontSizeToFit>Monthly Income</AppText>
           <AppText variant="amount" color={colors.green} numberOfLines={1} adjustsFontSizeToFit>
             {show(income)}
           </AppText>
-          <AppText variant="meta">{deposits.length} deposits ›</AppText>
+          <AppText variant="meta">{plural(deposits.length, "deposit")} ›</AppText>
         </Card>
       </View>
 
@@ -70,7 +74,7 @@ export default function Home({ navigation }) {
         icon="savings"
         label="Total Savings"
         amount={show(savings)}
-        hint={savingsAccounts.length + investmentAccounts.length + " accounts"}
+        hint={plural(savingsAccounts.length + investmentAccounts.length, "account")}
         onPress={() => navigation.navigate("Savings")}
       />
 
@@ -78,7 +82,7 @@ export default function Home({ navigation }) {
         icon="debt"
         label="Debt Breakdown"
         amount={show(debt)}
-        hint={debts.length + " debts · " + dueHint}
+        hint={plural(debts.length, "debt") + " · " + dueHint}
         onPress={() => navigation.navigate("Debt")}
       />
 
@@ -87,7 +91,7 @@ export default function Home({ navigation }) {
         label="Bills"
         amount={show(billsTotal)}
         hint={show(billsPaid) + " paid so far this month"}
-        progress={billsPaid / billsTotal}
+        progress={billsProgress}
         onPress={() => navigation.navigate("Bills")}
       />
     </ScrollView>

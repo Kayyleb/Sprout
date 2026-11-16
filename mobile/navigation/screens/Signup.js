@@ -19,6 +19,7 @@ import Row from "../../components/Row";
 import { useSettings } from "../../context/SettingsContext";
 import { createAccount, linkBankAccount } from "../../api";
 import { radius } from "../../theme";
+import { isValidEmail, passwordRules } from "../../utils/validate";
 
 export default function Signup({ navigation }) {
   const { colors } = useSettings();
@@ -30,16 +31,16 @@ export default function Signup({ navigation }) {
   const [loading, setLoading] = useState(false);
 
   // the password rules, each one knows if the password typed so far passes it
-  const rules = [
-    { label: "At least 8 characters", ok: password.length >= 8 },
-    { label: "An uppercase and a lowercase letter", ok: /[A-Z]/.test(password) && /[a-z]/.test(password) },
-    { label: "A number and a special character", ok: /[0-9]/.test(password) && /[^A-Za-z0-9]/.test(password) },
-  ];
+  const rules = passwordRules(password);
 
   // step 1, checks the fields and then creates the account
   const handleCreate = async () => {
     if (!username || !email || !password) {
       Alert.alert("Error", "Please fill in all fields.");
+      return;
+    }
+    if (!isValidEmail(email)) {
+      Alert.alert("Error", "That does not look like an email address.");
       return;
     }
     if (!rules.every((rule) => rule.ok)) {
@@ -49,7 +50,7 @@ export default function Signup({ navigation }) {
 
     setLoading(true);
     try {
-      await createAccount(username, email, password); // in demo mode this always works, see api.js
+      await createAccount(username.trim(), email.trim(), password); // in demo mode this always works, see api.js
       setStep(2);
     } catch (error) {
       // the backend sends the reason (username or email already taken), show it to the user
