@@ -27,7 +27,7 @@ Until the backend endpoints are finished, the app runs in **demo mode**: any ema
 ## What you need
 
 - **Node.js 22.13 or newer** (required by Expo SDK 57)
-- **Python 3.9 or newer**
+- **Python 3.15 or newer** (on a Mac: `brew install python@3.15`)
 - **Xcode with an iOS simulator** (Mac), or an Android emulator
 - **A free Plaid account**, for the sandbox keys. Only needed to run the backend.
 
@@ -40,7 +40,7 @@ Clone the repository, then set up each part once.
 From the project root:
 
 ```bash
-python3 -m venv venv
+python3.15 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env

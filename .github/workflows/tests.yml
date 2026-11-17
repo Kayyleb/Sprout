@@ -39,7 +39,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.9" # same version the project's venv uses
+          python-version: "3.15" # same version the project's venv uses
       - run: pip install -r requirements.txt
       - run: python -m compileall -q backend plaid-sandbox
       # loading main.py also creates the database tables, so this catches a bad import or a broken table
