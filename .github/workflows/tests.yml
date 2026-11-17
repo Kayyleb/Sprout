@@ -27,12 +27,12 @@ jobs:
       - run: npm ci
       - run: npm test
 
-  # makes sure the backend installs and starts up, there are no backend tests yet
+  # makes sure the backend installs and starts up, then runs the tests in backend/tests (the same thing as "pytest")
   backend:
-    name: Backend check
+    name: Backend tests
     runs-on: ubuntu-latest
     env:
-      # made up keys, the check only loads the app and never calls plaid
+      # made up keys, the tests never call plaid or the AI
       PLAID_CLIENT_ID: not-a-real-id
       PLAID_SECRET: not-a-real-secret
     steps:
@@ -40,7 +40,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.15" # same version the project's venv uses
-      - run: pip install -r requirements.txt
+      - run: pip install -r requirements-dev.txt
       - run: python -m compileall -q backend plaid-sandbox
       # loading main.py also creates the database tables, so this catches a bad import or a broken table
       - run: python -c "from backend.main import app; print(len(app.routes), 'routes loaded')"
+      - run: pytest

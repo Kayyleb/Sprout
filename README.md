@@ -19,7 +19,7 @@ The project is in early development. This is what works today and what does not.
 | Database | Set up with a `users` table |
 | Log in and create account | Screens are built, backend endpoints are in progress |
 | Real financial data on the screens | Not started |
-| AI assistant | Canned answers only |
+| AI assistant | Working, answered by Google Gemini (free tier) using the sample numbers |
 | Email verification, notifications | Not started |
 
 Until the backend endpoints are finished, the app runs in **demo mode**: any email and password logs in, and every number on screen comes from `mobile/data/sampleData.js`.
@@ -46,7 +46,12 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Open `.env` and fill in `PLAID_CLIENT_ID` and `PLAID_SECRET` with the sandbox keys from the [Plaid dashboard](https://dashboard.plaid.com). The `.env` file is never committed.
+Open `.env` and fill in:
+
+- `PLAID_CLIENT_ID` and `PLAID_SECRET`, the sandbox keys from the [Plaid dashboard](https://dashboard.plaid.com).
+- `GEMINI_API_KEY`, a free key from [Google AI Studio](https://aistudio.google.com/apikey). The assistant needs it; everything else works without it.
+
+The `.env` file is never committed.
 
 ### Mobile app
 
@@ -90,30 +95,42 @@ export const DEMO_MODE = true;
 
 Set `DEMO_MODE` to `false` and the app calls the backend for log in, create account and bank linking.
 
+The assistant has its own switch in the same file, `ASSISTANT_DEMO_MODE`, which is `false`. The assistant screen sends questions to the backend, so the backend needs to be running with `GEMINI_API_KEY` set. Set it to `true` to get the old canned answers without the backend.
+
 `localhost` only works on a simulator running on the same computer as the backend. To use a real phone, change `API_URL` to your computer's network address (for example `http://192.168.1.20:8000`) and start the backend with `--host 0.0.0.0`.
 
 ## Tests
+
+**App** (50 tests: the money and date helpers, the email and password rules, a check that the sample data adds up, and tests that tap through every screen):
 
 ```bash
 cd mobile
 npm test
 ```
 
-This runs 48 tests: the money and date helpers, the email and password rules, a check that the sample data adds up, and tests that tap through every screen.
+**Backend** (11 tests for the assistant end point), from the project root:
 
-The same tests run automatically on GitHub for every push to `main` and every pull request, along with a check that the backend installs and starts. The setup is in `.github/workflows/tests.yml`.
+```bash
+source venv/bin/activate
+pip install -r requirements-dev.txt
+pytest
+```
 
-The backend does not have its own tests yet.
+Neither set of tests calls Plaid or the AI for real, so they are free and work without any keys.
+
+Both run automatically on GitHub for every push to `main` and every pull request. The setup is in `.github/workflows/tests.yml`.
 
 ## Project layout
 
 ```
 backend/
   main.py            entry point, creates the app and the database tables
+  ai_client.py       the AI assistant setup, every call to Gemini goes through here
   database.py        connection to the SQLite database
   models.py          database tables (User)
   plaid_client.py    Plaid setup, reads the keys from .env
-  routes/            one file per group of endpoints (accounts, transactions)
+  routes/            one file per group of endpoints (accounts, transactions, assistant)
+  tests/             backend tests
 mobile/
   App.js             navigation, lists every screen
   api.js             all network calls, and the demo mode switch
@@ -139,8 +156,9 @@ plaid-sandbox/       the original command line test of the Plaid sandbox
 | POST | `/exchange-token` | Swaps a public token for an access token |
 | GET | `/balances` | Account balances for an access token |
 | GET | `/transactions` | Recent transactions for an access token |
+| POST | `/assistant` | Sends the chat and the month's totals to the AI and returns its answer |
 
-These currently return Plaid data directly. They will change to save to the database and to require a logged-in user.
+The Plaid endpoints currently return Plaid data directly. They will change to save to the database and to require a logged-in user.
 
 ## Design documents
 
@@ -153,6 +171,8 @@ The planning documents are in `docs/`:
 ## Common problems
 
 - **"Could not reach the server"** in the app: the backend is not running, or `API_URL` points somewhere the phone cannot reach.
+- **The assistant says it is not set up yet:** add `GEMINI_API_KEY` to `.env` and restart the backend.
+- **The assistant says it reached its free limit:** the Gemini free tier has a daily request limit. It resets at midnight Pacific time.
 - **Plaid errors when linking a bank:** check that `.env` exists in the project root and has both keys.
 - **The app icon or splash screen has not changed:** Expo Go always shows its own. They only appear in a development or production build.
 - **A database change is not showing up:** stop the backend, delete `database/sprout.db`, and start it again. The tables are rebuilt empty.

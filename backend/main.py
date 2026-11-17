@@ -4,7 +4,7 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.routes import accounts, transactions
+from backend.routes import accounts, transactions, assistant
 from backend.database import engine, Base
 from backend import models # has to be imported so the tables in it are known before they get created
 
@@ -23,6 +23,7 @@ app.add_middleware(
 
 app.include_router(accounts.router)
 app.include_router(transactions.router)
+app.include_router(assistant.router)
 
 # simple check to make sure the server is up
 @app.get("/")
