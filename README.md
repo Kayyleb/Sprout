@@ -14,13 +14,13 @@ The project is in early development. This is what works today and what does not.
 | Area | Status |
 | --- | --- |
 | App screens (log in, create account, home, spending, income, savings, debt, bills, assistant, settings) | Built, showing sample data |
-| Display settings (dark mode, font size, hide account values, date order) | Working, reset when the app closes |
+| Display settings (dark mode, font size, hide account values, date order) | Working, saved on the phone |
 | Plaid sandbox (link a test bank, read balances and transactions) | Working in the backend |
 | Database | Set up with a `users` table |
 | Log in and create account | Screens are built, backend endpoints are in progress |
 | Real financial data on the screens | Not started |
 | AI assistant | Working, answered by Google Gemini (free tier) using the sample numbers |
-| Email verification, notifications | Not started |
+| Email verification, notifications | Required, not started |
 
 Until the backend endpoints are finished, the app runs in **demo mode**: any email and password logs in, and every number on screen comes from `mobile/data/sampleData.js`.
 
@@ -101,7 +101,7 @@ The assistant has its own switch in the same file, `ASSISTANT_DEMO_MODE`, which 
 
 ## Tests
 
-**App** (50 tests: the money and date helpers, the email and password rules, a check that the sample data adds up, and tests that tap through every screen):
+**App** (52 tests: the money and date helpers, the email and password rules, a check that the sample data adds up, tests that tap through every screen, and a check that settings are saved):
 
 ```bash
 cd mobile

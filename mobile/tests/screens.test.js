@@ -3,9 +3,11 @@
 // these run against the sample data, and the network calls in api.js are swapped for stand ins, so the backend does not need to be running
 
 import { Alert } from "react-native";
-import { render, screen, fireEvent, act } from "@testing-library/react-native";
+import { render, screen, fireEvent, act, waitFor } from "@testing-library/react-native";
 
-import { SettingsProvider } from "../context/SettingsContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+import { SettingsProvider, SETTINGS_KEY } from "../context/SettingsContext";
 import Login from "../navigation/screens/Login";
 import Signup from "../navigation/screens/Signup";
 import Main from "../navigation/screens/Main";
@@ -32,6 +34,11 @@ jest.mock("../api", () => ({
 // the tests do not run on a real phone, so use the stand in that the safe area package ships for tests
 jest.mock("react-native-safe-area-context", () => require("react-native-safe-area-context/jest/mock").default);
 
+// same idea for the phone storage the display settings are saved in, the stand in keeps them in memory
+jest.mock("@react-native-async-storage/async-storage", () =>
+  require("@react-native-async-storage/async-storage/jest/async-storage-mock")
+);
+
 // a pretend navigation object, the tests check which of these the screen called
 function fakeNavigation() {
   return {
@@ -44,13 +51,17 @@ function fakeNavigation() {
 }
 
 // every screen reads the display settings, so each one is opened inside the settings provider like in App.js
-function open(screenToOpen) {
-  return render(<SettingsProvider>{screenToOpen}</SettingsProvider>);
+// the provider draws nothing until the saved settings are read, so this waits for the screen to show up
+async function open(screenToOpen) {
+  await render(<SettingsProvider>{screenToOpen}</SettingsProvider>);
+  await waitFor(() => expect(screen.toJSON()).not.toBeNull());
 }
 
 // alerts can not pop up in a test, so they are swapped for a stand in that just remembers what it was asked to show
-beforeEach(() => {
+// the saved settings are wiped too, so every test starts from the default settings
+beforeEach(async () => {
   jest.spyOn(Alert, "alert").mockImplementation(() => {});
+  await AsyncStorage.clear();
 });
 afterEach(() => {
   jest.restoreAllMocks();
@@ -400,6 +411,32 @@ test("changing the date order rewrites the dates", async () => {
 
   await fireEvent.press(screen.getByText("DD/MM/YYYY"));
   expect(screen.getByText("5 accounts · linked 02/11/2026")).toBeTruthy();
+});
+
+test("a changed setting is saved and is still there the next time the app opens", async () => {
+  await open(<Settings navigation={fakeNavigation()} />);
+  await fireEvent.press(screen.getByText("DD/MM/YYYY"));
+  await act(async () => {}); // let the save finish
+
+  const saved = JSON.parse(await AsyncStorage.getItem(SETTINGS_KEY));
+  expect(saved.dateOrder).toBe("DMY");
+
+  // close the screen and open it again, like closing and reopening the app
+  await screen.unmount();
+  await open(<Settings navigation={fakeNavigation()} />);
+  expect(screen.getByText("5 accounts · linked 02/11/2026")).toBeTruthy();
+});
+
+test("a broken save falls back to the default settings", async () => {
+  await AsyncStorage.setItem(SETTINGS_KEY, "{not json");
+  await open(<Settings navigation={fakeNavigation()} />);
+  expect(screen.getByText("5 accounts · linked 11/02/2026")).toBeTruthy();
+
+  // a save with a made up value only throws out that one value
+  await screen.unmount();
+  await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify({ dateOrder: "YMD", fontSize: "huge" }));
+  await open(<Settings navigation={fakeNavigation()} />);
+  expect(screen.getByText("5 accounts · linked 2026/11/02")).toBeTruthy();
 });
 
 test("disconnecting a bank asks first and then takes it off the list", async () => {
