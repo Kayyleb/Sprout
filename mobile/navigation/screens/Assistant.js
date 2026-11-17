@@ -1,27 +1,30 @@
 // File: Assistant.js
-// This is the assistant screen, a chat with suggested questions. The answers are canned for now, nothing is sent anywhere
+// This is the assistant screen, a chat with suggested questions. Questions go to the backend, which asks the AI (see api.js)
 
 import { useState, useEffect, useRef } from "react";
-import { View, ScrollView, TextInput, TouchableOpacity, Text, Keyboard, Platform, StyleSheet } from "react-native";
+import { View, ScrollView, TextInput, TouchableOpacity, Text, Keyboard, Platform, ActivityIndicator, StyleSheet } from "react-native";
 
 import AppText from "../../components/AppText";
 import Icon from "../../components/Icon";
 import { useTabBarHeight } from "../../components/TabBar";
 import { useSettings } from "../../context/SettingsContext";
 import { shadow } from "../../theme";
-import { assistantHello, assistantFallback, assistantQuestions } from "../../data/sampleData";
+import { assistantHello, assistantQuestions } from "../../data/sampleData";
+import { askAssistant } from "../../api";
+import { buildSummary } from "../../utils/summary";
 
 // the chat always starts with the hello message from the assistant
 const FIRST_MESSAGE = { from: "ai", text: assistantHello };
 
 export default function Assistant() {
   const { colors, fontScale } = useSettings();
-  const [messages, setMessages] = useState([FIRST_MESSAGE]); // each one is { from: "ai" or "me", text }
+  const [messages, setMessages] = useState([FIRST_MESSAGE]); // each one is { from: "ai" or "me", text, failed }
+  const [waiting, setWaiting] = useState(false); // true while the assistant is working on an answer
   const [text, setText] = useState(""); // what is typed in the box
   const [keyboardSpace, setKeyboardSpace] = useState(0);
   const scroll = useRef(null);
   const tabBarHeight = useTabBarHeight();
-  const answerTimer = useRef(null); // the wait before the assistant answers, kept so it can be cancelled
+  const chatId = useRef(0); // goes up by one every time the chat is cleared, so an answer to a cleared chat gets thrown away
 
   // on ios the keyboard covers the bottom of the screen, so the text box gets pushed up by the keyboard height
   // (minus the tab bar, since that is under the text box and gets covered anyway)
@@ -40,35 +43,56 @@ export default function Assistant() {
     };
   }, [tabBarHeight]);
 
-  // if the screen goes away while an answer is still on its way, cancel it
+  // if the screen goes away while an answer is still on its way, the answer gets thrown away
   useEffect(() => {
-    return () => clearTimeout(answerTimer.current);
+    return () => {
+      chatId.current += 1;
+    };
   }, []);
 
-  // adds the question to the chat, then the answer half a second later
-  // this is where the real call to the assistant will go
-  const ask = (question) => {
-    setMessages((current) => [...current, { from: "me", text: question }]);
+  // adds the question to the chat, then asks the assistant and adds its answer when it comes back
+  const ask = async (question) => {
+    if (waiting) return; // one question at a time, so the free limit is not used up by double taps
 
-    const match = assistantQuestions.find((item) => item.question === question);
-    const answer = match ? match.answer : assistantFallback;
-    answerTimer.current = setTimeout(() => {
-      setMessages((current) => [...current, { from: "ai", text: answer }]);
-    }, 500);
+    const myMessage = { from: "me", text: question };
+    const chat = [...messages, myMessage];
+    setMessages(chat);
+    setWaiting(true);
+
+    // the chat in the shape the backend wants, the error bubbles are left out since they were never real answers
+    const history = chat
+      .filter((message) => !message.failed)
+      .map((message) => ({ role: message.from === "me" ? "user" : "assistant", text: message.text }));
+
+    const thisChat = chatId.current;
+    let answer;
+    try {
+      answer = { from: "ai", text: await askAssistant(history, buildSummary()) };
+    } catch (error) {
+      // shown as a grey bubble so it is clear it is not a real answer
+      answer = { from: "ai", text: error.message, failed: true };
+    }
+
+    // only add the answer if the chat was not cleared (or the screen closed) while waiting
+    if (thisChat === chatId.current) {
+      setMessages((current) => [...current, answer]);
+      setWaiting(false);
+    }
   };
 
   // runs when the send button is tapped
   const handleSend = () => {
     const question = text.trim();
-    if (!question) return; // nothing to send
+    if (!question || waiting) return; // nothing to send, or still waiting on the last answer
     setText("");
     ask(question);
   };
 
   // wipes the chat back to just the hello message
   const handleClear = () => {
-    clearTimeout(answerTimer.current); // so an answer does not show up after the chat was cleared
+    chatId.current += 1; // so an answer that is still on its way does not show up in the new chat
     setMessages([FIRST_MESSAGE]);
+    setWaiting(false);
   };
 
   return (
@@ -87,6 +111,8 @@ export default function Assistant() {
         {/* the chat bubbles, mine are green on the right and the assistant is on the left */}
         {messages.map((message, index) => {
           const mine = message.from === "me";
+          let textColor = mine ? "#fff" : colors.text;
+          if (message.failed) textColor = colors.muted; // errors are grey so they do not look like an answer
           return (
             <View
               key={index}
@@ -96,10 +122,17 @@ export default function Assistant() {
                 { backgroundColor: mine ? colors.green : colors.card },
               ]}
             >
-              <AppText style={styles.bubbleText} color={mine ? "#fff" : colors.text}>{message.text}</AppText>
+              <AppText style={styles.bubbleText} color={textColor}>{message.text}</AppText>
             </View>
           );
         })}
+
+        {/* a spinner bubble while the assistant is thinking */}
+        {waiting && (
+          <View style={[styles.bubble, styles.aiBubble, { backgroundColor: colors.card }]}>
+            <ActivityIndicator testID="assistant-thinking" color={colors.green} />
+          </View>
+        )}
 
         {/* suggested questions, tapping one asks it */}
         <View style={styles.prompts}>
@@ -107,7 +140,9 @@ export default function Assistant() {
             <TouchableOpacity
               key={item.question}
               style={[styles.prompt, { borderColor: colors.green }]}
-              onPress={() => ask(item.question)}
+              onPress={() => {
+                ask(item.question);
+              }}
             >
               <AppText variant="meta" style={styles.promptText} color={colors.green}>{item.question}</AppText>
             </TouchableOpacity>
@@ -133,7 +168,11 @@ export default function Assistant() {
           onSubmitEditing={handleSend}
           returnKeyType="send"
         />
-        <TouchableOpacity style={[styles.send, { backgroundColor: colors.green }]} onPress={handleSend}>
+        <TouchableOpacity
+          style={[styles.send, { backgroundColor: colors.green, opacity: waiting ? 0.5 : 1 }]}
+          onPress={handleSend}
+          disabled={waiting}
+        >
           <Text style={styles.sendArrow}>↑</Text>
         </TouchableOpacity>
       </View>

@@ -165,11 +165,11 @@ export const demoBankAccounts = [
 export const assistantHello =
   "Hi! I can help you understand your budget. Ask me anything, or pick one of the questions below.";
 
-// what the assistant says to anything that is not one of the suggested questions
+// what the assistant says to anything that is not one of the suggested questions, only used when ASSISTANT_DEMO_MODE is on in api.js
 export const assistantFallback =
-  "Once I am hooked up I will look at your Sprout summaries to answer that. For now I only know the suggested questions.";
+  "In demo mode I only know the suggested questions. Turn off ASSISTANT_DEMO_MODE in api.js to ask me anything.";
 
-// suggested questions and the canned answer for each
+// suggested questions, and the canned answer for each that is used when ASSISTANT_DEMO_MODE is on in api.js
 export const assistantQuestions = [
   {
     question: "How much did I spend this month?",

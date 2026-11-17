@@ -17,7 +17,7 @@ import Debt from "../navigation/screens/Debt";
 import Bills from "../navigation/screens/Bills";
 import Assistant from "../navigation/screens/Assistant";
 import Settings from "../navigation/screens/Settings";
-import { login, createAccount } from "../api";
+import { login, createAccount, askAssistant } from "../api";
 
 // stand ins for the functions in api.js, they answer right away the same way the backend would on a good day
 // a test can make one fail to see what the screen does, example: login.mockRejectedValueOnce(new Error("..."))
@@ -26,6 +26,7 @@ jest.mock("../api", () => ({
   createAccount: jest.fn(async () => ({ user_id: 1 })),
   linkBankAccount: jest.fn(async () => "test-access-token"),
   getBalances: jest.fn(async () => [{ name: "Checking" }, { name: "Savings" }, { name: "Credit Card" }]),
+  askAssistant: jest.fn(async () => "Here is an answer."),
 }));
 
 // the tests do not run on a real phone, so use the stand in that the safe area package ships for tests
@@ -53,15 +54,8 @@ beforeEach(() => {
 });
 afterEach(() => {
   jest.restoreAllMocks();
+  jest.clearAllMocks(); // forget the calls from the last test, so each test only sees its own
 });
-
-// waits one second for the assistant's pause before it answers
-// doing the wait inside act() tells the test that the screen is allowed to change during it
-async function waitASecond() {
-  await act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-  });
-}
 
 // ---- LOG IN ----
 test("log in asks for both fields before doing anything", async () => {
@@ -339,26 +333,64 @@ test("the add bill form adds an upcoming bill to the total", async () => {
 });
 
 // ---- ASSISTANT ----
-test("tapping a suggested question gets its answer, and clear wipes the chat", async () => {
+test("asking a question sends the chat and the month's totals, then shows the answer", async () => {
+  askAssistant.mockResolvedValueOnce("Yes, you have $1,970.00 left after bills.");
   await open(<Assistant />);
 
   await fireEvent.press(screen.getByText("Can I afford my bills?"));
-  await waitASecond();
-  expect(screen.getByText(/You still have \$485.00 of bills left to pay/)).toBeTruthy();
 
-  await fireEvent.press(screen.getByText("Clear"));
-  expect(screen.queryByText(/You still have \$485.00/)).toBeNull();
+  expect(await screen.findByText("Yes, you have $1,970.00 left after bills.")).toBeTruthy();
+  const [history, summary] = askAssistant.mock.calls[0];
+  expect(history[history.length - 1]).toEqual({ role: "user", text: "Can I afford my bills?" });
+  expect(history[0].role).toBe("assistant"); // the hello message, the backend skips it
+  expect(summary.spending).toBe(1284.5);
+  expect(summary.debts.length).toBe(3);
+  expect(JSON.stringify(summary)).not.toMatch(/••/); // no account numbers go to the assistant
 });
 
-test("typing a question that is not a suggested one gets the fallback answer", async () => {
+test("typing a question sends it, and clear wipes the chat", async () => {
+  askAssistant.mockResolvedValueOnce("A Roth IRA is a retirement account you pay into after taxes.");
   await open(<Assistant />);
 
   await fireEvent.changeText(screen.getByPlaceholderText("Ask about your finances"), "What is a Roth IRA?");
   await fireEvent(screen.getByPlaceholderText("Ask about your finances"), "submitEditing");
 
   expect(screen.getByText("What is a Roth IRA?")).toBeTruthy();
-  await waitASecond();
-  expect(screen.getByText(/For now I only know the suggested questions/)).toBeTruthy();
+  expect(await screen.findByText(/A Roth IRA is a retirement account/)).toBeTruthy();
+
+  await fireEvent.press(screen.getByText("Clear"));
+  expect(screen.queryByText("What is a Roth IRA?")).toBeNull();
+});
+
+test("when the assistant fails the reason is shown, and it is left out of the next question", async () => {
+  askAssistant.mockRejectedValueOnce(new Error("The assistant has reached its free limit for now."));
+  await open(<Assistant />);
+
+  await fireEvent.press(screen.getByText("Am I saving enough?"));
+  expect(await screen.findByText("The assistant has reached its free limit for now.")).toBeTruthy();
+
+  askAssistant.mockResolvedValueOnce("You are doing well.");
+  await fireEvent.press(screen.getByText("Can I afford my bills?"));
+
+  expect(await screen.findByText("You are doing well.")).toBeTruthy();
+  const history = askAssistant.mock.calls[1][0];
+  expect(history.map((message) => message.text)).not.toContain("The assistant has reached its free limit for now.");
+});
+
+test("a spinner shows while waiting, and a second question can not be sent until the answer is back", async () => {
+  let finish;
+  askAssistant.mockImplementationOnce(() => new Promise((resolve) => (finish = resolve)));
+  await open(<Assistant />);
+
+  await fireEvent.press(screen.getByText("Am I saving enough?"));
+  expect(screen.getByTestId("assistant-thinking")).toBeTruthy();
+
+  await fireEvent.press(screen.getByText("Can I afford my bills?")); // ignored while waiting
+  expect(askAssistant).toHaveBeenCalledTimes(1);
+
+  await act(async () => finish("Yes."));
+  expect(screen.queryByTestId("assistant-thinking")).toBeNull();
+  expect(screen.getByText("Yes.")).toBeTruthy();
 });
 
 // ---- SETTINGS ----

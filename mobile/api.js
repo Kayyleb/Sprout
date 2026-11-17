@@ -1,7 +1,7 @@
 // File: api.js
 // All of the network code lives here, every screen calls these functions instead of using fetch itself
 
-import { demoBankAccounts } from "./data/sampleData";
+import { demoBankAccounts, assistantQuestions, assistantFallback } from "./data/sampleData";
 
 // where the backend is running, localhost only works on a simulator on the same computer
 export const API_URL = "http://localhost:8000";
@@ -10,6 +10,11 @@ export const API_URL = "http://localhost:8000";
 //                      so the app can be clicked through on its own
 // DEMO_MODE = false -> the functions below really call the backend at API_URL
 export const DEMO_MODE = true;
+
+// the assistant has its own switch, since it already has a working end point on the backend
+// ASSISTANT_DEMO_MODE = true  -> canned answers to the suggested questions, no backend needed
+// ASSISTANT_DEMO_MODE = false -> questions go to the backend, which asks the AI (needs GEMINI_API_KEY in .env)
+export const ASSISTANT_DEMO_MODE = false;
 
 // small pause used in demo mode so the loading spinners still show up
 function wait(ms) {
@@ -92,6 +97,20 @@ export async function linkBankAccount() {
     "Could not exchange the token."
   );
   return exchangeData.access_token;
+}
+
+// POST /assistant -> { reply }, or an error with { detail } (no key yet, free limit used up...)
+// messages is the chat so far, like [{ role: "user", text: "..." }, { role: "assistant", text: "..." }]
+// summary is the month's totals from utils/summary.js
+export async function askAssistant(messages, summary) {
+  if (ASSISTANT_DEMO_MODE) {
+    await wait(500);
+    const question = messages[messages.length - 1].text;
+    const match = assistantQuestions.find((item) => item.question === question);
+    return match ? match.answer : assistantFallback;
+  }
+  const data = await post("/assistant", { messages, summary }, "The assistant could not answer right now.");
+  return data.reply;
 }
 
 // GET /balances -> { accounts: [{ name, type, available, current }] }, this hands back just the accounts list
