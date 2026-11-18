@@ -18,8 +18,8 @@ jobs:
       run:
         working-directory: mobile
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22 # expo sdk 57 needs node 22.13 or newer
           cache: npm
@@ -36,8 +36,8 @@ jobs:
       PLAID_CLIENT_ID: not-a-real-id
       PLAID_SECRET: not-a-real-secret
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.15" # same version the project's venv uses
       - run: pip install -r requirements-dev.txt
