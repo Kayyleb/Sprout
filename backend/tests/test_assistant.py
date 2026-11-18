@@ -130,6 +130,13 @@ def test_bad_requests_are_turned_down_before_the_ai_is_called(fake_ai):
     assert client.post("/assistant", json={"messages": [{"role": "user", "text": ""}]}).status_code == 422
     assert client.post("/assistant", json={"messages": [{"role": "user", "text": "x" * 2001}]}).status_code == 422
     assert client.post("/assistant", json={"messages": [{"role": "robot", "text": "hi"}]}).status_code == 422
+    assert client.post("/assistant", json={"messages": [{"role": "user", "text": "   "}]}).status_code == 422  # only spaces
+
+    # NaN is not allowed in normal json, but python's json can send it, and it used to crash the error response into a 500
+    nan_body = '{"messages": [{"role": "user", "text": "hi"}], "summary": {"month": "Nov", "spending": NaN, "income": 1, "bills": 1, "bills_paid": 1, "savings": 1, "debt": 1}}'
+    response = client.post("/assistant", content=nan_body, headers={"Content-Type": "application/json"})
+    assert response.status_code == 422
+    assert response.json()["detail"][0]["msg"] == "Input should be a finite number"
 
     # the last message has to be a question from the user
     response = client.post("/assistant", json={"messages": [{"role": "assistant", "text": "hello"}]})

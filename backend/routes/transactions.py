@@ -2,7 +2,7 @@
 # This is the transaction router, similar to accounts.py, it is the end point for pulling a user's transactions from plaid
 
 #python imports:
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from plaid.model.transactions_get_request import TransactionsGetRequest
 from plaid.model.transactions_get_request_options import TransactionsGetRequestOptions
 from datetime import date, timedelta
@@ -12,7 +12,8 @@ router = APIRouter()
 
 # grabs/requests the recent transactions from the users
 @router.get("/transactions")
-def get_transactions(access_token: str, days: int = 30):
+# days has to be 1 to 730, plaid only keeps 2 years of history (and a huge number crashed the date math)
+def get_transactions(access_token: str, days: int = Query(30, ge=1, le=730)):
     end = date.today()
     start = end - timedelta(days=days) #calc date range
 

@@ -2,10 +2,10 @@
 # This is the assistant router, the end point the assistant screen in the app sends questions to
 
 #python imports:
-from typing import List, Literal, Optional
+from typing import Annotated, List, Literal, Optional
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 from backend import ai_client
 
@@ -15,14 +15,22 @@ router = APIRouter()
 HISTORY_LIMIT = 20
 
 
+# text with the spaces trimmed off the ends, a message of only spaces counts as empty and gets turned away
+MessageText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)]
+
+# the numbers have to be real numbers, json from some apps can sneak in NaN or Infinity which would end up as "$nan" for the AI
+FINITE_NUMBERS = ConfigDict(allow_inf_nan=False)
+
+
 # one message in the chat, role is who said it
 class ChatMessage(BaseModel):
     role: Literal["user", "assistant"]
-    text: str = Field(min_length=1, max_length=2000)
+    text: MessageText
 
 
 # one debt, used for questions about paying debt off
 class DebtSummary(BaseModel):
+    model_config = FINITE_NUMBERS
     name: str = Field(max_length=100)
     balance: float
     apr: float
@@ -32,6 +40,7 @@ class DebtSummary(BaseModel):
 # the user's totals for the month, the app sends these until the backend can work them out from the database
 # there is no account number or token in here on purpose (business rule 12)
 class FinancialSummary(BaseModel):
+    model_config = FINITE_NUMBERS
     month: str = Field(max_length=40)
     spending: float
     income: float
