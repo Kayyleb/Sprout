@@ -3,7 +3,8 @@
 # everything that needs the database imports from here so the setup only happens once
 
 from pathlib import Path
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker , declarative_base
 
 # the database is one file, it sits in the database/ folder in the project root
@@ -18,6 +19,14 @@ SessionLocal = sessionmaker(bind=engine , autoflush=False)
 
 # Base is what every table in models.py inherits from, it is how sqlalchemy knows which classes are tables
 Base = declarative_base()
+
+# sqlite ignores foreign keys unless it is told to check them, every time a connection opens
+# without this, deleting a user would leave all of their accounts, transactions and bills behind with nobody owning them
+@event.listens_for(Engine, "connect")
+def turn_on_foreign_keys(connection, record):
+    cursor = connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
 
 # let each request get its own session:
 # the routes ask for this with Depends(get_Database), and it always closes the session after, even if the request failed

@@ -16,7 +16,7 @@ The project is in early development. This is what works today and what does not.
 | App screens (log in, create account, home, spending, income, savings, debt, bills, assistant, settings) | Built, showing sample data |
 | Display settings (dark mode, font size, hide account values, date order) | Working, saved on the phone |
 | Plaid sandbox (link a test bank, read balances and transactions) | Working in the backend |
-| Database | Set up with a `users` table |
+| Database | Tables for users, verification codes, bank connections, accounts, holdings, transactions and bills. Nothing saves to them yet except through log in once it is built |
 | Log in and create account | Screens are built, backend endpoints are in progress |
 | Real financial data on the screens | Not started |
 | AI assistant | Working, answered by Google Gemini (free tier) using the sample numbers |
@@ -108,7 +108,7 @@ cd mobile
 npm test
 ```
 
-**Backend** (18 tests for the assistant and Plaid end points, including bad requests and Plaid errors), from the project root:
+**Backend** (28 tests for the assistant and Plaid end points, including bad requests and Plaid errors, and for the database tables), from the project root:
 
 ```bash
 source venv/bin/activate
@@ -127,7 +127,7 @@ backend/
   main.py            entry point, creates the app and the database tables
   ai_client.py       the AI assistant setup, every call to Gemini goes through here
   database.py        connection to the SQLite database
-  models.py          database tables (User)
+  models.py          database tables (money is saved in cents)
   plaid_client.py    Plaid setup, reads the keys from .env
   routes/            one file per group of endpoints (accounts, transactions, assistant)
   tests/             backend tests
