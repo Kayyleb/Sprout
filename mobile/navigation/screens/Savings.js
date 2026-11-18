@@ -13,7 +13,7 @@ import Input from "../../components/Input";
 import Row from "../../components/Row";
 import SectionTitle from "../../components/SectionTitle";
 import { useSettings } from "../../context/SettingsContext";
-import { money, total, plural } from "../../utils/format";
+import { money, parseAmount, total, plural } from "../../utils/format";
 import { savingsAccounts, investmentAccounts } from "../../data/sampleData";
 
 // the account types on the add form, the last two are the ones that count as investments
@@ -38,14 +38,14 @@ export default function Savings() {
   // runs when the user taps Save on the add account form
   // nothing is sent to the backend yet, it only gets added to the lists on this screen
   const handleSave = () => {
-    const number = Number(balance);
-    if (!name || balance === "" || isNaN(number) || number < 0) {
+    const number = parseAmount(balance); // a balance of 0 is fine, a new account can be empty
+    if (!name.trim() || number === null) {
       Alert.alert("Error", "Enter a name and a balance for the account.");
       return;
     }
 
     // the type is shown as the bold name and the name the user typed goes underneath, same as the linked accounts
-    const newAccount = { name: type, detail: name + " · added manually", balance: number };
+    const newAccount = { name: type, detail: name.trim() + " · added manually", balance: number };
     if (type === "Investment" || type === "Retirement") {
       setInvestments([...investments, { ...newAccount, holdings: [] }]);
     } else {

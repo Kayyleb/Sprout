@@ -12,7 +12,7 @@ import Hero from "../../components/Hero";
 import Input from "../../components/Input";
 import Row from "../../components/Row";
 import { useSettings } from "../../context/SettingsContext";
-import { money, total, dayOf, inMonth, parseDate, datePlaceholder, plural } from "../../utils/format";
+import { money, parseAmount, total, dayOf, inMonth, parseDate, datePlaceholder, plural } from "../../utils/format";
 import { currentMonth, deposits, depositTypes, incomeWeeks, bills } from "../../data/sampleData";
 
 // the deposit types as a list for the pills on the add form
@@ -45,6 +45,9 @@ export default function Income() {
     return { ...week, items: weekItems, total: total(weekItems, "amount") };
   });
 
+  // how many days this month has (day 0 of next month is the last day of this one), so week 4 says 30 in a 30 day month
+  const daysInMonth = new Date(currentMonth.year, currentMonth.month, 0).getDate();
+
   // the largest week, so every bar is drawn against the same scale
   const biggest = Math.max(...weeks.map((week) => week.total), 1);
   const weeksWithIncome = weeks.filter((week) => week.total > 0).length;
@@ -52,9 +55,9 @@ export default function Income() {
   // runs when the user taps Save on the add income form
   // nothing is sent to the backend yet, it only gets added to the list on this screen
   const handleSave = () => {
-    const number = Number(amount);
+    const number = parseAmount(amount);
     const isoDate = parseDate(date, dateOrder);
-    if (!number || number <= 0) {
+    if (!number) { // empty, not a number, or zero
       Alert.alert("Error", "Enter the amount you received.");
       return;
     }
@@ -64,6 +67,10 @@ export default function Income() {
     }
 
     setItems([...items, { date: isoDate, type: type, amount: number }]);
+    // only this month is shown, so say so instead of the new one seeming to vanish
+    if (!inMonth(isoDate, currentMonth)) {
+      Alert.alert("Saved", "That date is not in " + currentMonth.name + ", so it does not show on this screen.");
+    }
 
     // clear the form and close it
     setAmount("");
@@ -87,7 +94,7 @@ export default function Income() {
             <View key={week.name} style={styles.week}>
               <View style={styles.weekHead}>
                 <AppText variant="name">
-                  {week.name} · {currentMonth.shortName} {week.firstDay} – {week.lastDay}
+                  {week.name} · {currentMonth.shortName} {week.firstDay} – {Math.min(week.lastDay, daysInMonth)}
                 </AppText>
                 <AppText variant="name">{money(week.total)}</AppText>
               </View>

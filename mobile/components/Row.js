@@ -26,6 +26,7 @@ export default function Row({ name, meta, value, valueColor, dot, icon, right, f
     <Wrapper
       style={[styles.row, { borderTopColor: colors.line }, first && styles.first]}
       onPress={onPress}
+      accessibilityRole={onPress ? "button" : undefined}
     >
       <View style={styles.left}>
         <View style={styles.nameLine}>

@@ -16,6 +16,12 @@ export const DEMO_MODE = true;
 // ASSISTANT_DEMO_MODE = false -> questions go to the backend, which asks the AI (needs GEMINI_API_KEY in .env)
 export const ASSISTANT_DEMO_MODE = false;
 
+// how long to wait for the backend before giving up, so a wrong API_URL does not leave a spinner going forever
+const TIMEOUT_MS = 15000;
+
+// the assistant gets longer, the backend can wait up to 20 seconds for the AI and then try once more
+export const ASSISTANT_TIMEOUT_MS = 50000;
+
 // small pause used in demo mode so the loading spinners still show up
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -23,36 +29,47 @@ function wait(ms) {
 
 // shared helper for every call
 // sends the request, and if the backend answers with an error it throws the "detail" message so the screen can show it
-async function request(path, options, fallbackMessage) {
-  let response;
-  try {
-    response = await fetch(API_URL + path, options);
-  } catch (error) {
-    // fetch itself failed, the backend is probably not running
-    throw new Error("Could not reach the server. Is the backend running?");
-  }
+export async function request(path, options, fallbackMessage, timeoutMs = TIMEOUT_MS) {
+  // the controller cancels the request if the timer runs out first
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-  // the body should be json, but do not crash if it is not
-  let data = {};
   try {
-    data = await response.json();
-  } catch (error) {
-    data = {};
-  }
-
-  if (!response.ok) {
-    // fastapi puts the reason in "detail", only use it when it is plain text
-    // a 404 means the backend does not have this end point yet, its detail is just "Not Found" so the fallback reads better
-    if (response.status !== 404 && data && typeof data.detail === "string") {
-      throw new Error(data.detail);
+    let response;
+    try {
+      response = await fetch(API_URL + path, { ...options, signal: controller.signal });
+    } catch (error) {
+      if (controller.signal.aborted) {
+        throw new Error("The server took too long to answer. Try again in a moment.");
+      }
+      // fetch itself failed, the backend is probably not running
+      throw new Error("Could not reach the server. Is the backend running?");
     }
-    throw new Error(fallbackMessage);
+
+    // the body should be json, but do not crash if it is not
+    let data = {};
+    try {
+      data = await response.json();
+    } catch (error) {
+      data = {};
+    }
+
+    if (!response.ok) {
+      // fastapi puts the reason in "detail", only use it when it is plain text
+      // a 404 means the backend does not have this end point yet, its detail is just "Not Found" so the fallback reads better
+      if (response.status !== 404 && data && typeof data.detail === "string") {
+        throw new Error(data.detail);
+      }
+      throw new Error(fallbackMessage);
+    }
+    return data || {};
+  } finally {
+    clearTimeout(timer); // the answer came back (or failed), so the timer is not needed anymore
   }
-  return data;
 }
 
 // shortcut for a POST with a json body
-function post(path, body, fallbackMessage) {
+function post(path, body, fallbackMessage, timeoutMs) {
   return request(
     path,
     {
@@ -60,7 +77,8 @@ function post(path, body, fallbackMessage) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body || {}),
     },
-    fallbackMessage
+    fallbackMessage,
+    timeoutMs
   );
 }
 
@@ -109,7 +127,15 @@ export async function askAssistant(messages, summary) {
     const match = assistantQuestions.find((item) => item.question === question);
     return match ? match.answer : assistantFallback;
   }
-  const data = await post("/assistant", { messages, summary }, "The assistant could not answer right now.");
+  const data = await post(
+    "/assistant",
+    { messages, summary },
+    "The assistant could not answer right now.",
+    ASSISTANT_TIMEOUT_MS
+  );
+  if (typeof data.reply !== "string" || !data.reply) {
+    throw new Error("The assistant could not answer right now.");
+  }
   return data.reply;
 }
 

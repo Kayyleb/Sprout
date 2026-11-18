@@ -13,7 +13,7 @@ import Hero from "../../components/Hero";
 import Input from "../../components/Input";
 import Row from "../../components/Row";
 import { useSettings } from "../../context/SettingsContext";
-import { money, total, dayOf, inMonth, formatDate, parseDate, datePlaceholder } from "../../utils/format";
+import { money, parseAmount, total, dayOf, inMonth, formatDate, parseDate, datePlaceholder } from "../../utils/format";
 import { currentMonth, bills, billColors } from "../../data/sampleData";
 
 // the bill categories as a list, for the legend and for the pills on the add form
@@ -47,9 +47,11 @@ export default function Bills() {
   // runs when the user taps Save on the add bill form
   // nothing is sent to the backend yet, it only gets added to the list on this screen
   const handleSave = () => {
-    const number = Number(amount);
+    const number = parseAmount(amount);
     const isoDate = parseDate(date, dateOrder);
-    if (!name || !number || number <= 0) {
+    // left empty counts as monthly, otherwise a whole number from once a year up to every day
+    const perYear = timesPerYear.trim() === "" ? 12 : Number(timesPerYear);
+    if (!name.trim() || !number) {
       Alert.alert("Error", "Enter a name and an amount for the bill.");
       return;
     }
@@ -57,16 +59,24 @@ export default function Bills() {
       Alert.alert("Error", "Enter the date like this: " + datePlaceholder(dateOrder));
       return;
     }
+    if (!/^\d+$/.test(timesPerYear.trim() || "12") || perYear < 1 || perYear > 365) {
+      Alert.alert("Error", "Times per year has to be a whole number, like 12 for monthly or 1 for yearly.");
+      return;
+    }
 
     const newBill = {
       date: isoDate,
-      name: name,
+      name: name.trim(),
       amount: number,
       category: category,
-      timesPerYear: Number(timesPerYear) || 12, // left empty counts as monthly
+      timesPerYear: perYear,
       paid: false,
     };
     setItems([...items, newBill]);
+    // only this month is shown, so say so instead of the new one seeming to vanish
+    if (!inMonth(isoDate, currentMonth)) {
+      Alert.alert("Saved", "That date is not in " + currentMonth.name + ", so it does not show on this screen.");
+    }
 
     // clear the form and close it
     setName("");
@@ -115,7 +125,9 @@ export default function Bills() {
             {selectedDay ? "Due " + currentMonth.name + " " + selectedDay : "All bills"}
           </AppText>
 
-          {shown.length === 0 && <AppText variant="meta">No bills due on this day.</AppText>}
+          {shown.length === 0 && (
+            <AppText variant="meta">{selectedDay ? "No bills due on this day." : "No bills this month."}</AppText>
+          )}
 
           {shown.map((bill, index) => (
             <Row

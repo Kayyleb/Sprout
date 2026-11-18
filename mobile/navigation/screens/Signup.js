@@ -35,7 +35,7 @@ export default function Signup({ navigation }) {
 
   // step 1, checks the fields and then creates the account
   const handleCreate = async () => {
-    if (!username || !email || !password) {
+    if (!username.trim() || !email.trim() || !password) {
       Alert.alert("Error", "Please fill in all fields.");
       return;
     }

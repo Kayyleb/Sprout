@@ -38,6 +38,8 @@ export default function Button({ title, onPress, variant = "primary", small, loa
       onPress={onPress}
       disabled={loading} // stops a second tap while it is working
       activeOpacity={0.7}
+      accessibilityRole="button" // so a screen reader says "button" after the title
+      accessibilityState={{ disabled: !!loading, busy: !!loading }}
     >
       {loading ? (
         <ActivityIndicator color={textColor} />

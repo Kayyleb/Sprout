@@ -75,7 +75,7 @@ export const incomeWeeks = [
   { name: "Week 1", firstDay: 1, lastDay: 7 },
   { name: "Week 2", firstDay: 8, lastDay: 14 },
   { name: "Week 3", firstDay: 15, lastDay: 21 },
-  { name: "Week 4", firstDay: 22, lastDay: 30 },
+  { name: "Week 4", firstDay: 22, lastDay: 31 }, // runs to the 31st so a long month does not lose its last day
 ];
 
 // ---- SAVINGS ----

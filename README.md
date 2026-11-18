@@ -101,14 +101,14 @@ The assistant has its own switch in the same file, `ASSISTANT_DEMO_MODE`, which 
 
 ## Tests
 
-**App** (52 tests: the money and date helpers, the email and password rules, a check that the sample data adds up, tests that tap through every screen, and a check that settings are saved):
+**App** (71 tests: the money and date helpers, the email and password rules, a check that the sample data adds up, the network code in `api.js`, tests that tap through every screen and try bad input on every form, and a check that settings are saved):
 
 ```bash
 cd mobile
 npm test
 ```
 
-**Backend** (11 tests for the assistant end point), from the project root:
+**Backend** (18 tests for the assistant and Plaid end points, including bad requests and Plaid errors), from the project root:
 
 ```bash
 source venv/bin/activate

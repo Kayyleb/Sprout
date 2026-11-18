@@ -28,7 +28,7 @@ export default function Login({ navigation }) {
 
   // runs when the user taps Sign In
   const handleLogin = async () => {
-    if (!email || !password) {
+    if (!email.trim() || !password) {
       Alert.alert("Error", "Please fill in all fields.");
       return;
     }

@@ -2,7 +2,7 @@
 // Tests that open each screen and tap through it the way a user would, to make sure the buttons and forms do what they should
 // these run against the sample data, and the network calls in api.js are swapped for stand ins, so the backend does not need to be running
 
-import { Alert } from "react-native";
+import { Alert, Keyboard } from "react-native";
 import { render, screen, fireEvent, act, waitFor } from "@testing-library/react-native";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -55,6 +55,16 @@ function fakeNavigation() {
 async function open(screenToOpen) {
   await render(<SettingsProvider>{screenToOpen}</SettingsProvider>);
   await waitFor(() => expect(screen.toJSON()).not.toBeNull());
+}
+
+// finds the tap handler for a piece of text, by going up from the text to the button it sits in
+// react native leaves a test only way to read a button's settings on it (testOnly_pressabilityConfig), that is where onPress is
+function tapHandler(element) {
+  let node = element;
+  while (node && !node.props?.onStartShouldSetResponder?.testOnly_pressabilityConfig) {
+    node = node.parent;
+  }
+  return node.props.onStartShouldSetResponder.testOnly_pressabilityConfig().onPress;
 }
 
 // alerts can not pop up in a test, so they are swapped for a stand in that just remembers what it was asked to show
@@ -202,6 +212,26 @@ test("the bottom tabs switch between home, assistant and settings", async () => 
   expect(screen.getByText("Hide account values")).toBeTruthy();
 });
 
+test("the assistant chat and the linked banks are still there after switching tabs", async () => {
+  await open(<Main navigation={fakeNavigation()} />);
+
+  await fireEvent.press(screen.getByText("Assistant"));
+  await fireEvent.press(screen.getByText("How much did I spend this month?"));
+  expect(await screen.findByText("Here is an answer.")).toBeTruthy();
+
+  await fireEvent.press(screen.getByText("Settings"));
+  await fireEvent.press(screen.getByText("+ Connect a new account"));
+  expect(screen.getByText("Plaid Sandbox Bank")).toBeTruthy();
+
+  // go to home and back, nothing should be lost
+  await fireEvent.press(screen.getByText("Home"));
+  expect(screen.queryByText("Here is an answer.")).toBeNull(); // the other tabs are hidden while home is showing
+  await fireEvent.press(screen.getByText("Assistant"));
+  expect(screen.getByText("Here is an answer.")).toBeTruthy();
+  await fireEvent.press(screen.getByText("Settings"));
+  expect(screen.getByText("Plaid Sandbox Bank")).toBeTruthy();
+});
+
 test("turning on hide account values masks the amounts on the home tab", async () => {
   await open(<Main navigation={fakeNavigation()} />);
 
@@ -245,6 +275,33 @@ test("the add spending form checks the date and then adds to the total", async (
   expect(screen.queryByPlaceholderText("Amount")).toBeNull(); // the form closed
 });
 
+test("the amount box takes commas and turns down negative amounts", async () => {
+  await open(<Spending />);
+  await fireEvent.press(screen.getByText("+ Add Spending"));
+  await fireEvent.changeText(screen.getByPlaceholderText("Date (MM/DD/YYYY)"), "11/16/2026");
+
+  await fireEvent.changeText(screen.getByPlaceholderText("Amount"), "-5");
+  await fireEvent.press(screen.getByText("Save"));
+  expect(Alert.alert).toHaveBeenLastCalledWith("Error", "Enter the amount you spent.");
+
+  // a comma for the decimal point, like a phone set to a european country types it
+  await fireEvent.changeText(screen.getByPlaceholderText("Amount"), "12,50");
+  await fireEvent.press(screen.getByText("Save"));
+  expect(screen.getByText("$1,297.00")).toBeTruthy(); // $12.50 more, not $1,250
+});
+
+test("a purchase from another month says why it is not on the screen", async () => {
+  await open(<Spending />);
+  await fireEvent.press(screen.getByText("+ Add Spending"));
+
+  await fireEvent.changeText(screen.getByPlaceholderText("Amount"), "10");
+  await fireEvent.changeText(screen.getByPlaceholderText("Date (MM/DD/YYYY)"), "10/31/2026");
+  await fireEvent.press(screen.getByText("Save"));
+
+  expect(Alert.alert).toHaveBeenLastCalledWith("Saved", "That date is not in November, so it does not show on this screen.");
+  expect(screen.getByText("$1,284.50")).toBeTruthy(); // the november total is the same
+});
+
 // ---- INCOME ----
 test("income shows the weekly breakdown and the net income after bills", async () => {
   await open(<Income />);
@@ -264,6 +321,11 @@ test("the add income form adds a deposit to the total", async () => {
 
   expect(screen.getByText("6 deposits across 4 weeks")).toBeTruthy();
   expect(screen.getAllByText("$3,500.00").length).toBeGreaterThan(0);
+});
+
+test("week 4 on the income screen ends on the last day of the month", async () => {
+  await open(<Income />);
+  expect(screen.getByText("Week 4 · Nov 22 – 30")).toBeTruthy(); // november has 30 days
 });
 
 // ---- SAVINGS ----
@@ -317,6 +379,29 @@ test("the add debt form needs a name and balance, then adds to the total", async
   expect(screen.getByText("$15,000.00")).toBeTruthy();
 });
 
+test("the add debt form turns down a rate or minimum that is not a number", async () => {
+  await open(<Debt />);
+  await fireEvent.press(screen.getByText("+ Add Debt"));
+  await fireEvent.changeText(screen.getByPlaceholderText("Name"), "Medical");
+  await fireEvent.changeText(screen.getByPlaceholderText("Balance"), "725");
+  await fireEvent.changeText(screen.getByPlaceholderText("Due date (MM/DD/YYYY)"), "11/30/2026");
+
+  await fireEvent.changeText(screen.getByPlaceholderText("Interest rate (APR %)"), "abc");
+  await fireEvent.press(screen.getByText("Save"));
+  expect(Alert.alert).toHaveBeenLastCalledWith("Error", "Enter the interest rate as a percent, like 24.9.");
+
+  await fireEvent.changeText(screen.getByPlaceholderText("Interest rate (APR %)"), "4.5");
+  await fireEvent.changeText(screen.getByPlaceholderText("Minimum payment"), "-20");
+  await fireEvent.press(screen.getByText("Save"));
+  expect(Alert.alert).toHaveBeenLastCalledWith("Error", "Enter the minimum payment as an amount, like 65.");
+  expect(screen.queryByText("Medical")).toBeNull(); // nothing was added
+
+  await fireEvent.changeText(screen.getByPlaceholderText("Minimum payment"), "25");
+  await fireEvent.press(screen.getByText("Save"));
+  expect(screen.getByText("Medical")).toBeTruthy();
+  expect(screen.getByText("4.5% APR · min $25.00 · due 11/30/2026")).toBeTruthy();
+});
+
 // ---- BILLS ----
 test("tapping a day on the bills calendar only lists the bills due that day", async () => {
   await open(<Bills />);
@@ -341,6 +426,24 @@ test("the add bill form adds an upcoming bill to the total", async () => {
   expect(screen.getByText("$1,500.00")).toBeTruthy();
   expect(screen.getByText("Water")).toBeTruthy();
   expect(screen.getByText("$965.00 paid · $535.00 still to go")).toBeTruthy();
+});
+
+test("the add bill form turns down times per year that is not a whole number", async () => {
+  await open(<Bills />);
+  await fireEvent.press(screen.getByText("+ Add Bill"));
+  await fireEvent.changeText(screen.getByPlaceholderText("Bill name"), "Water");
+  await fireEvent.changeText(screen.getByPlaceholderText("Amount"), "50");
+  await fireEvent.changeText(screen.getByPlaceholderText("Date (MM/DD/YYYY)"), "11/29/2026");
+
+  for (const bad of ["abc", "0", "2.5", "400"]) {
+    await fireEvent.changeText(screen.getByPlaceholderText("Times per year (12 = monthly)"), bad);
+    await fireEvent.press(screen.getByText("Save"));
+    expect(Alert.alert).toHaveBeenLastCalledWith(
+      "Error",
+      "Times per year has to be a whole number, like 12 for monthly or 1 for yearly."
+    );
+  }
+  expect(screen.queryByText("Water")).toBeNull();
 });
 
 // ---- ASSISTANT ----
@@ -402,6 +505,46 @@ test("a spinner shows while waiting, and a second question can not be sent until
   await act(async () => finish("Yes."));
   expect(screen.queryByTestId("assistant-thinking")).toBeNull();
   expect(screen.getByText("Yes.")).toBeTruthy();
+});
+
+test("two taps in the same split second only send one question", async () => {
+  let finish;
+  askAssistant.mockImplementationOnce(() => new Promise((resolve) => (finish = resolve)));
+  await open(<Assistant />);
+
+  // both taps land before the screen has a chance to redraw, like a fast double tap on a real phone
+  // the two buttons' tap handlers are called back to back inside one act, so nothing redraws in between
+  const tapFirst = tapHandler(screen.getByText("Am I saving enough?"));
+  const tapSecond = tapHandler(screen.getByText("Can I afford my bills?"));
+  await act(async () => {
+    tapFirst();
+    tapSecond();
+  });
+  expect(askAssistant).toHaveBeenCalledTimes(1);
+
+  await act(async () => finish("Yes."));
+  expect(screen.getByText("Yes.")).toBeTruthy();
+});
+
+test("the assistant stops listening to the keyboard when it closes, even with an answer on the way", async () => {
+  // keep track of every keyboard listener the screen starts
+  const listeners = [];
+  jest.spyOn(Keyboard, "addListener").mockImplementation(() => {
+    const listener = { remove: jest.fn() };
+    listeners.push(listener);
+    return listener;
+  });
+  let finish;
+  askAssistant.mockImplementationOnce(() => new Promise((resolve) => (finish = resolve)));
+
+  await open(<Assistant />);
+  expect(listeners.length).toBe(2); // keyboard opening and keyboard closing
+
+  await fireEvent.press(screen.getByText("Am I saving enough?"));
+  await screen.unmount(); // leave while the answer is still coming
+  await act(async () => finish("Too late."));
+
+  listeners.forEach((listener) => expect(listener.remove).toHaveBeenCalledTimes(1)); // nothing left running
 });
 
 // ---- SETTINGS ----

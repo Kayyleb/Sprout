@@ -13,7 +13,7 @@ export default function Card({ children, onPress, style }) {
   // with an onPress the whole card works like a button (the cards on the home screen)
   if (onPress) {
     return (
-      <TouchableOpacity style={cardStyle} onPress={onPress} activeOpacity={0.7}>
+      <TouchableOpacity style={cardStyle} onPress={onPress} activeOpacity={0.7} accessibilityRole="button">
         {children}
       </TouchableOpacity>
     );

@@ -17,7 +17,7 @@ import { buildSummary } from "../../utils/summary";
 const FIRST_MESSAGE = { from: "ai", text: assistantHello };
 
 export default function Assistant() {
-  const { colors, fontScale } = useSettings();
+  const { colors, fontScale, darkMode } = useSettings();
   const [messages, setMessages] = useState([FIRST_MESSAGE]); // each one is { from: "ai" or "me", text, failed }
   const [waiting, setWaiting] = useState(false); // true while the assistant is working on an answer
   const [text, setText] = useState(""); // what is typed in the box
@@ -25,6 +25,9 @@ export default function Assistant() {
   const scroll = useRef(null);
   const tabBarHeight = useTabBarHeight();
   const chatId = useRef(0); // goes up by one every time the chat is cleared, so an answer to a cleared chat gets thrown away
+  // true while a question is on its way, kept in a ref because it changes right away
+  // (waiting only changes on the next draw, so two taps in the same split second could both get past it)
+  const busy = useRef(false);
 
   // on ios the keyboard covers the bottom of the screen, so the text box gets pushed up by the keyboard height
   // (minus the tab bar, since that is under the text box and gets covered anyway)
@@ -52,7 +55,8 @@ export default function Assistant() {
 
   // adds the question to the chat, then asks the assistant and adds its answer when it comes back
   const ask = async (question) => {
-    if (waiting) return; // one question at a time, so the free limit is not used up by double taps
+    if (busy.current) return; // one question at a time, so the free limit is not used up by double taps
+    busy.current = true;
 
     const myMessage = { from: "me", text: question };
     const chat = [...messages, myMessage];
@@ -77,13 +81,14 @@ export default function Assistant() {
     if (thisChat === chatId.current) {
       setMessages((current) => [...current, answer]);
       setWaiting(false);
+      busy.current = false;
     }
   };
 
   // runs when the send button is tapped
   const handleSend = () => {
     const question = text.trim();
-    if (!question || waiting) return; // nothing to send, or still waiting on the last answer
+    if (!question || busy.current) return; // nothing to send, or still waiting on the last answer (the typed text stays in the box)
     setText("");
     ask(question);
   };
@@ -91,6 +96,7 @@ export default function Assistant() {
   // wipes the chat back to just the hello message
   const handleClear = () => {
     chatId.current += 1; // so an answer that is still on its way does not show up in the new chat
+    busy.current = false;
     setMessages([FIRST_MESSAGE]);
     setWaiting(false);
   };
@@ -163,6 +169,7 @@ export default function Assistant() {
           style={[styles.box, { backgroundColor: colors.input, color: colors.text, fontSize: 15 * fontScale }]}
           placeholder="Ask about your finances"
           placeholderTextColor={colors.muted}
+          keyboardAppearance={darkMode ? "dark" : "light"}
           value={text}
           onChangeText={setText}
           onSubmitEditing={handleSend}
@@ -172,6 +179,9 @@ export default function Assistant() {
           style={[styles.send, { backgroundColor: colors.green, opacity: waiting ? 0.5 : 1 }]}
           onPress={handleSend}
           disabled={waiting}
+          accessibilityRole="button"
+          accessibilityLabel="Send" // the button is just an arrow, this is what a screen reader says for it
+          accessibilityState={{ disabled: waiting }}
         >
           <Text style={styles.sendArrow}>↑</Text>
         </TouchableOpacity>

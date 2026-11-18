@@ -56,6 +56,9 @@ export default function Calendar({ selectedDay, onSelectDay, renderDay }) {
               style={styles.box}
               onPress={() => onSelectDay(selected ? null : day)}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={name + " " + day} // "November 18" instead of just "18"
+              accessibilityState={{ selected }}
             >
               <View
                 style={[

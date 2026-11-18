@@ -8,7 +8,7 @@ import { radius } from "../theme";
 
 // takes the same props as a normal TextInput (placeholder, value, onChangeText, keyboardType...)
 export default function Input({ style, ...rest }) {
-  const { colors, fontScale } = useSettings();
+  const { colors, fontScale, darkMode } = useSettings();
 
   return (
     <TextInput
@@ -18,6 +18,7 @@ export default function Input({ style, ...rest }) {
         style,
       ]}
       placeholderTextColor={colors.muted}
+      keyboardAppearance={darkMode ? "dark" : "light"} // the keyboard matches dark mode (this one only changes on iphone)
       autoCapitalize="none"
       {...rest}
     />

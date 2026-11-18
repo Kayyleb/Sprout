@@ -14,7 +14,7 @@ import Input from "../../components/Input";
 import Row from "../../components/Row";
 import SectionTitle from "../../components/SectionTitle";
 import { useSettings } from "../../context/SettingsContext";
-import { money, total, dayOf, inMonth, formatDate, parseDate, datePlaceholder, plural } from "../../utils/format";
+import { money, parseAmount, total, dayOf, inMonth, formatDate, parseDate, datePlaceholder, plural } from "../../utils/format";
 import { currentMonth, debts, payoffPlan, deposits, bills } from "../../data/sampleData";
 
 export default function Debt() {
@@ -54,10 +54,21 @@ export default function Debt() {
   // runs when the user taps Save on the add debt form
   // nothing is sent to the backend yet, it only gets added to the list on this screen
   const handleSave = () => {
-    const number = Number(balance);
+    const number = parseAmount(balance);
     const isoDate = parseDate(dueDate, dateOrder);
-    if (!name || !number || number <= 0) {
+    // the rate and minimum can be left empty (they count as 0), but if something is typed it has to be a number
+    const aprNumber = apr.trim() === "" ? 0 : parseAmount(apr);
+    const minimumNumber = minimum.trim() === "" ? 0 : parseAmount(minimum);
+    if (!name.trim() || !number) {
       Alert.alert("Error", "Enter a name and a balance for the debt.");
+      return;
+    }
+    if (aprNumber === null || aprNumber > 100) {
+      Alert.alert("Error", "Enter the interest rate as a percent, like 24.9.");
+      return;
+    }
+    if (minimumNumber === null) {
+      Alert.alert("Error", "Enter the minimum payment as an amount, like 65.");
       return;
     }
     if (!isoDate) {
@@ -66,10 +77,10 @@ export default function Debt() {
     }
 
     const newDebt = {
-      name: name,
+      name: name.trim(),
       balance: number,
-      apr: Number(apr) || 0, // left empty counts as 0
-      minimum: Number(minimum) || 0,
+      apr: aprNumber,
+      minimum: minimumNumber,
       dueDate: isoDate,
     };
     setItems([...items, newDebt]);

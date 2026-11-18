@@ -11,6 +11,21 @@ export function money(amount) {
   return currency.format(amount);
 }
 
+// the opposite of money, turns what the user typed in an amount box into a number rounded to the cent
+// "$1,284.50" -> 1284.5, "12,50" -> 12.5 (phones set to some countries put a comma in the decimal keypad)
+// returns null when it is empty, not a number, or below zero, so each form can say what is wrong
+export function parseAmount(text) {
+  let cleaned = String(text).replace(/[$\s]/g, "");
+  if (/^\d+,\d{1,2}$/.test(cleaned)) {
+    cleaned = cleaned.replace(",", "."); // a comma with one or two numbers after it is the decimal point
+  } else {
+    cleaned = cleaned.replace(/,/g, ""); // otherwise commas just split up the thousands
+  }
+  if (!/^\d*\.?\d+$|^\d+\.$/.test(cleaned)) return null; // only numbers and one dot, so "1e5" and "-3" do not sneak through
+
+  return Math.round(Number(cleaned) * 100) / 100;
+}
+
 // adds up one field of every item in a list, example: total(bills, "amount")
 export function total(list, field) {
   let sum = 0;
@@ -38,8 +53,9 @@ export function datePlaceholder(order) {
 // the opposite of formatDate, turns what the user typed back into YYYY-MM-DD
 // returns null if it is not a real date (wrong shape, month 13, february 30th...)
 export function parseDate(text, order) {
-  const parts = text.trim().split(/[\/\-.]/).map(Number);
-  if (parts.length !== 3 || !parts.every(Number.isInteger)) return null;
+  const pieces = text.trim().split(/[\/\-.]/);
+  if (pieces.length !== 3 || !pieces.every((piece) => /^\d+$/.test(piece))) return null; // numbers only, so "+1" or "1e1" do not count
+  const parts = pieces.map(Number);
 
   let y, m, d;
   if (order === "DMY") [d, m, y] = parts;

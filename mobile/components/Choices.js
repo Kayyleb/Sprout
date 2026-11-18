@@ -24,6 +24,8 @@ export default function Choices({ options, value, onChange, style }) {
               picked && { backgroundColor: colors.green },
             ]}
             onPress={() => onChange(option.value)}
+            accessibilityRole="button"
+            accessibilityState={{ selected: picked }} // a screen reader says which pill is picked
           >
             <AppText variant="meta" style={styles.pillText} color={picked ? "#fff" : colors.text}>
               {option.label}

@@ -4,12 +4,30 @@
 
 import assert from "node:assert/strict";
 
-import { money, total, formatDate, parseDate, datePlaceholder, dayOf, inMonth, plural, todayIso } from "../utils/format.js";
+import { money, parseAmount, total, formatDate, parseDate, datePlaceholder, dayOf, inMonth, plural, todayIso } from "../utils/format.js";
 
 test("money writes amounts as US dollars", () => {
   assert.equal(money(1284.5), "$1,284.50");
   assert.equal(money(0), "$0.00");
   assert.equal(money(18640.12), "$18,640.12");
+});
+
+test("parseAmount reads what the user typed in an amount box", () => {
+  assert.equal(parseAmount("12"), 12);
+  assert.equal(parseAmount("12.5"), 12.5);
+  assert.equal(parseAmount(" $1,284.50 "), 1284.5); // dollar sign, spaces and thousands commas are fine
+  assert.equal(parseAmount("12,50"), 12.5); // a comma as the decimal point, like some phones' keypads
+  assert.equal(parseAmount("1,000"), 1000); // three numbers after the comma means thousands
+  assert.equal(parseAmount(".5"), 0.5);
+  assert.equal(parseAmount("5."), 5);
+  assert.equal(parseAmount("19.999"), 20); // rounded to the cent
+  assert.equal(parseAmount("0"), 0); // zero is a real amount, each form decides if it is allowed
+});
+
+test("parseAmount turns down things that are not amounts", () => {
+  for (const text of ["", " ", "abc", "-5", "1e5", "1.2.3", "Infinity", "NaN", "$", "12a"]) {
+    assert.equal(parseAmount(text), null, text);
+  }
 });
 
 test("total adds up one field of a list", () => {
@@ -46,6 +64,9 @@ test("parseDate turns down things that are not real dates", () => {
   assert.equal(parseDate("11/31/2026", "MDY"), null); // november only has 30 days
   assert.equal(parseDate("02/29/2026", "MDY"), null); // 2026 is not a leap year
   assert.equal(parseDate("02/29/2028", "MDY"), "2028-02-29"); // 2028 is
+  assert.equal(parseDate("+1/2/2026", "MDY"), null); // a plus sign is not part of a date
+  assert.equal(parseDate("1e1/2/2026", "MDY"), null); // 1e1 is how javascript writes 10, it should not count as a month
+  assert.equal(parseDate("1//2026", "MDY"), null); // a missing day
 });
 
 test("parseDate and formatDate undo each other", () => {

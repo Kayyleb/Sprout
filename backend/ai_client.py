@@ -56,7 +56,7 @@ def _get_client() -> genai.Client:
         _client = genai.Client(
             api_key=api_key,
             http_options=types.HttpOptions(
-                timeout=30_000,  # give up after 30 seconds (this setting is in milliseconds)
+                timeout=20_000,  # give up after 20 seconds (this setting is in milliseconds), the app waits 50 seconds for both tries
                 # try once more if google's servers have a hiccup, but not on 429 (the free daily limit),
                 # since waiting a few seconds does not bring a used up limit back
                 retry_options=types.HttpRetryOptions(attempts=2, http_status_codes=[500, 502, 503, 504]),

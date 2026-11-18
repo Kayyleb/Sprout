@@ -12,7 +12,7 @@ import Hero from "../../components/Hero";
 import Input from "../../components/Input";
 import Row from "../../components/Row";
 import { useSettings } from "../../context/SettingsContext";
-import { money, total, dayOf, inMonth, parseDate, datePlaceholder } from "../../utils/format";
+import { money, parseAmount, total, dayOf, inMonth, parseDate, datePlaceholder } from "../../utils/format";
 import { currentMonth, purchases } from "../../data/sampleData";
 
 export default function Spending() {
@@ -37,9 +37,9 @@ export default function Spending() {
   // runs when the user taps Save on the add spending form
   // nothing is sent to the backend yet, it only gets added to the list on this screen
   const handleSave = () => {
-    const number = Number(amount);
+    const number = parseAmount(amount);
     const isoDate = parseDate(date, dateOrder);
-    if (!number || number <= 0) {
+    if (!number) { // empty, not a number, or zero
       Alert.alert("Error", "Enter the amount you spent.");
       return;
     }
@@ -50,11 +50,15 @@ export default function Spending() {
 
     const newItem = {
       date: isoDate,
-      name: description || "Purchase",
+      name: description.trim() || "Purchase",
       account: "Added manually",
       amount: number,
     };
     setItems([...items, newItem]);
+    // only this month is shown, so say so instead of the new one seeming to vanish
+    if (!inMonth(isoDate, currentMonth)) {
+      Alert.alert("Saved", "That date is not in " + currentMonth.name + ", so it does not show on this screen.");
+    }
 
     // clear the form and close it
     setAmount("");

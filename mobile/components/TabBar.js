@@ -32,6 +32,7 @@ export default function TabBar({ active, onChange }) {
 
   return (
     <View
+      accessibilityRole="tablist"
       style={[
         styles.bar,
         { height: height, paddingBottom: insets.bottom, backgroundColor: colors.card, borderTopColor: colors.line },
@@ -45,6 +46,8 @@ export default function TabBar({ active, onChange }) {
             style={styles.tab}
             onPress={() => onChange(tab.id)}
             activeOpacity={0.7}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: isActive }}
           >
             {/* the tab that is picked is green, the other two are grey */}
             <Icon name={tab.icon} size={24} color={isActive ? colors.green : colors.muted} />
