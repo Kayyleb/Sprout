@@ -16,6 +16,11 @@ export const DEMO_MODE = true;
 // ASSISTANT_DEMO_MODE = false -> questions go to the backend, which asks the AI (needs GEMINI_API_KEY in .env)
 export const ASSISTANT_DEMO_MODE = false;
 
+// the token /login hands back, it gets sent with every call after that so the backend knows who is asking
+// it only lives in memory for now, so closing the app logs the user out
+// (staying logged in comes with fingerprint / face log in, decision 14 in the object model)
+let authToken = null;
+
 // how long to wait for the backend before giving up, so a wrong API_URL does not leave a spinner going forever
 const TIMEOUT_MS = 15000;
 
@@ -37,7 +42,9 @@ export async function request(path, options, fallbackMessage, timeoutMs = TIMEOU
   try {
     let response;
     try {
-      response = await fetch(API_URL + path, { ...options, signal: controller.signal });
+      // once logged in, every call carries the token in the Authorization header, the usual "Bearer <token>" form
+      const headers = authToken ? { ...options.headers, Authorization: "Bearer " + authToken } : options.headers;
+      response = await fetch(API_URL + path, { ...options, headers, signal: controller.signal });
     } catch (error) {
       if (controller.signal.aborted) {
         throw new Error("The server took too long to answer. Try again in a moment.");
@@ -84,11 +91,23 @@ function post(path, body, fallbackMessage, timeoutMs) {
 
 // POST /login -> { token }, or 401 with { detail }
 export async function login(email, password) {
+  let data;
   if (DEMO_MODE) {
     await wait(600);
-    return { token: "demo-token" };
+    data = { token: "demo-token" };
+  } else {
+    data = await post("/login", { email, password }, "Could not sign in.");
   }
-  return post("/login", { email, password }, "Could not sign in.");
+  if (typeof data.token !== "string" || !data.token) {
+    throw new Error("Could not sign in."); // the backend said ok but did not send a token, so nothing after this would work
+  }
+  authToken = data.token;
+  return data;
+}
+
+// forgets the token, the settings screen calls this when the user logs out
+export function logout() {
+  authToken = null;
 }
 
 // POST /create-account -> { user_id }, or 409 with { detail } when the username or email is taken

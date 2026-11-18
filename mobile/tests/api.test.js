@@ -2,7 +2,7 @@
 // Tests for the network code in api.js, fetch is swapped for a stand in so nothing really goes over the network
 // these check what the screens get back when the backend answers, says no, is not running, or takes too long
 
-import { request, askAssistant, ASSISTANT_TIMEOUT_MS } from "../api";
+import { request, askAssistant, login, logout, ASSISTANT_TIMEOUT_MS } from "../api";
 
 // makes a pretend response like the one fetch hands back
 function reply(status, body) {
@@ -29,6 +29,7 @@ beforeEach(() => {
 afterEach(() => {
   jest.useRealTimers();
   delete global.fetch;
+  logout(); // every test starts logged out
 });
 
 test("a good answer is handed back as it came", async () => {
@@ -112,4 +113,23 @@ test("the assistant gets longer to answer than other calls", async () => {
 test("an empty answer from the assistant counts as a failure, not a blank bubble", async () => {
   fetch.mockResolvedValue(reply(200, {}));
   await expect(askAssistant([{ role: "user", text: "hi" }], null)).rejects.toThrow("The assistant could not answer right now.");
+});
+
+test("after logging in, every call sends the token, and logging out stops it", async () => {
+  fetch.mockResolvedValue(reply(200, {}));
+
+  await request("/balances", { method: "GET" }, "Fallback");
+  expect(fetch.mock.calls[0][1].headers).toBeUndefined(); // not logged in yet, so no token
+
+  await login("kayleb@example.com", "Password1!"); // demo mode hands back "demo-token"
+  await request("/balances", { method: "GET" }, "Fallback");
+  expect(fetch.mock.calls[1][1].headers).toEqual({ Authorization: "Bearer demo-token" });
+
+  // the token is added next to headers a call already has, not in place of them
+  await askAssistant([{ role: "user", text: "hi" }], null).catch(() => {});
+  expect(fetch.mock.calls[2][1].headers).toEqual({ "Content-Type": "application/json", Authorization: "Bearer demo-token" });
+
+  logout();
+  await request("/balances", { method: "GET" }, "Fallback");
+  expect(fetch.mock.calls[3][1].headers).toBeUndefined();
 });

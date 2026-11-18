@@ -19,12 +19,13 @@ import Debt from "../navigation/screens/Debt";
 import Bills from "../navigation/screens/Bills";
 import Assistant from "../navigation/screens/Assistant";
 import Settings from "../navigation/screens/Settings";
-import { login, createAccount, askAssistant } from "../api";
+import { login, logout, createAccount, askAssistant } from "../api";
 
 // stand ins for the functions in api.js, they answer right away the same way the backend would on a good day
 // a test can make one fail to see what the screen does, example: login.mockRejectedValueOnce(new Error("..."))
 jest.mock("../api", () => ({
   login: jest.fn(async () => ({ token: "test-token" })),
+  logout: jest.fn(),
   createAccount: jest.fn(async () => ({ user_id: 1 })),
   linkBankAccount: jest.fn(async () => "test-access-token"),
   getBalances: jest.fn(async () => [{ name: "Checking" }, { name: "Savings" }, { name: "Credit Card" }]),
@@ -613,5 +614,6 @@ test("log out goes back to the log in screen", async () => {
 
   await fireEvent.press(screen.getByText("Log Out"));
 
+  expect(logout).toHaveBeenCalled(); // the log in token is forgotten
   expect(navigation.reset).toHaveBeenCalledWith({ index: 0, routes: [{ name: "Login" }] });
 });

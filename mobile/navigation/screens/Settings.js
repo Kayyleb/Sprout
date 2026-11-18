@@ -12,7 +12,7 @@ import Row from "../../components/Row";
 import SectionTitle from "../../components/SectionTitle";
 import { useSettings } from "../../context/SettingsContext";
 import { formatDate, todayIso, plural } from "../../utils/format";
-import { linkBankAccount, getBalances } from "../../api";
+import { linkBankAccount, getBalances, logout } from "../../api";
 import { user, linkedBanks } from "../../data/sampleData";
 
 const FONT_OPTIONS = [
@@ -71,6 +71,7 @@ export default function Settings({ navigation }) {
 
   // reset so the back button can not get back into the app after logging out
   const handleLogOut = () => {
+    logout(); // forget the log in token so the next calls are not sent as this user
     navigation.reset({ index: 0, routes: [{ name: "Login" }] });
   };
 

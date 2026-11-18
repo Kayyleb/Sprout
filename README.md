@@ -93,7 +93,7 @@ export const API_URL = "http://localhost:8000";
 export const DEMO_MODE = true;
 ```
 
-Set `DEMO_MODE` to `false` and the app calls the backend for log in, create account and bank linking.
+Set `DEMO_MODE` to `false` and the app calls the backend for log in, create account and bank linking. `/login` should answer with `{"token": "..."}`. After that the app sends the token with every request as an `Authorization: Bearer <token>` header, and forgets it on log out.
 
 The assistant has its own switch in the same file, `ASSISTANT_DEMO_MODE`, which is `false`. The assistant screen sends questions to the backend, so the backend needs to be running with `GEMINI_API_KEY` set. Set it to `true` to get the old canned answers without the backend.
 
